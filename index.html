@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <title>Critique</title>
+    <link rel="stylesheet" href="stylesheet.css">
+    <link rel="icon" type="image/jpg" href="res/icon.jpg">
+</head>
+
+<body>
+    <header class="navbar">
+        <nav class="navbar__nav" aria-label="Navegação principal">
+            <div id="navbar-home" class="navbar__brand" aria-label="Nome da aplicação">Critique <span class="navbar__brand-version">v1.0</span></div>
+            <span class="navbar__separator" aria-hidden="true"></span>
+            <div class="navbar__section">
+                <div class="navbar__dropdown">
+                    <span class="navbar__section-title">Personagens</span>
+                    <div class="navbar__submenu" role="tablist" aria-label="Personagens">
+                        <button class="navbar__tab" type="button" data-target="cadastrar-personagem" role="tab" aria-selected="false">Cadastrar</button>
+                        <button class="navbar__tab" type="button" data-target="editar-personagem" role="tab" aria-selected="false">Editar</button>
+                        <button class="navbar__tab" type="button" data-target="palavras-chave" role="tab" aria-selected="false">Palavras Chave</button>
+                        <button class="navbar__tab" type="button" data-target="visualizar-personagem" role="tab" aria-selected="false">Visualizar</button>
+                    </div>
+                </div>
+                <div class="navbar__dropdown">
+                    <span class="navbar__section-title">Combate</span>
+                    <div class="navbar__submenu" role="tablist" aria-label="Combate">
+                        <button class="navbar__tab" type="button" data-target="efeitos" role="tab" aria-selected="false">Efeitos</button>
+                        <button class="navbar__tab" type="button" data-target="mesa" role="tab" aria-selected="false">Combate Simples</button>
+                    </div>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main class="app-shell">
+        <section id="inicio" class="panel panel--active" role="tabpanel">
+            <div class="home">
+                <div class="home__content">
+                    <img class="home__gif" src="res/welcome.gif" alt="Welcome">
+                    <button id="clear-localstorage-home" class="home__wipe-button" type="button" aria-label="Apagar todo o localStorage da aplicação" title="Apagar todo o localStorage da aplicação">Apagar LocalStorage</button>
+                </div>
+            </div>
+        </section>
+
+        <section id="cadastrar-personagem" class="panel" role="tabpanel" hidden>
+            <div class="panel__card">
+                <div class="panel__heading">
+                    <h1 class="panel__title">Cadastrar Personagem</h1>
+                    <button id="clear-character-form" class="panel__action" type="button">Limpar Campos</button>
+                </div>
+
+                <div class="creator">
+                    <div class="creator__preview">
+                        <button class="image-maximize-btn" type="button" data-open-preview="image-preview" aria-label="Maximizar imagem">⛶</button>
+                        <img id="image-preview" src="" alt="Pré-visualização do personagem" data-hover-preview="true" hidden>
+                        <span id="image-placeholder" class="creator__placeholder">Nenhuma imagem selecionada</span>
+                    </div>
+
+                    <div class="creator__field">
+                        <label for="char-image">Imagem</label>
+                        <div class="creator__actions">
+                            <button id="choose-image" type="button">Escolher Imagem</button>
+                            <button id="remove-image" class="creator__action-remove" type="button" hidden>Remover Imagem</button>
+                            <input id="char-image" type="file" accept="image/*" hidden>
+                        </div>
+                    </div>
+
+                    <div class="creator__section">
+                        <div class="creator__section-header">
+                            <h2 class="creator__section-title">Geral</h2>
+                            <span class="creator__section-divider" aria-hidden="true"></span>
+                        </div>
+
+                        <div class="creator__field">
+                            <label for="char-name">Nome</label>
+                            <input id="char-name" type="text" autocomplete="off" placeholder="Ex.: Ricardo">
+                        </div>
+
+                        <div class="creator__grid">
+                            <div class="creator__field">
+                                <label for="char-vida">Vida</label>
+                                <div class="creator__input-with-icon">
+                                    <img src="res/hp.png" alt="" class="creator__input-icon" aria-hidden="true">
+                                    <input id="char-vida" type="number" min="0" placeholder="Ex.: 3000">
+                                </div>
+                            </div>
+                            <div class="creator__field">
+                                <label for="char-stagger">Stagger</label>
+                                <div class="creator__input-with-icon">
+                                    <img src="res/stagger.png" alt="" class="creator__input-icon" aria-hidden="true">
+                                    <input id="char-stagger" type="number" min="0" placeholder="Ex.: 1200">
+                                </div>
+                            </div>
+                            <div class="creator__field">
+                                <label for="char-speed">Speed</label>
+                                <div class="creator__input-with-icon">
+                                    <img src="res/speed.png" alt="" class="creator__input-icon" aria-hidden="true">
+                                    <input id="char-speed" type="text" placeholder="Ex.: 2~8" pattern="^\s*\d+\s*~\s*\d+\s*$">
+                                </div>
+                            </div>
+                            <div class="creator__field">
+                                <label for="char-ca">CA</label>
+                                <div class="creator__input-with-icon">
+                                    <img src="res/ca.png" alt="" class="creator__input-icon" aria-hidden="true">
+                                    <input id="char-ca" type="number" min="0" placeholder="Ex.: 6">
+                                </div>
+                            </div>
+                            <div class="creator__field">
+                                <label for="char-movement">Deslocamento</label>
+                                <div class="creator__input-with-icon">
+                                    <img src="res/movement.png" alt="" class="creator__input-icon" aria-hidden="true">
+                                    <input id="char-movement" type="text" placeholder="Ex.: 45">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="creator__section">
+                        <div class="creator__section-header">
+                            <h2 class="creator__section-title">Resistências</h2>
+                            <span class="creator__section-divider" aria-hidden="true"></span>
+                        </div>
+
+                        <div class="creator__grid creator__grid--resistances">
+                            <div class="creator__field">
+                                <label for="char-slash">Slash</label>
+                                <div class="creator__input-with-icon">
+                                    <img src="res/slash.png" alt="" class="creator__input-icon" aria-hidden="true">
+                                    <select id="char-slash">
+                                        <option value="2.0">Vulnerável</option>
+                                        <option value="1.0" selected>Normal</option>
+                                        <option value="0.5">Resistente</option>
+                                        <option value="custom">Customizada</option>
+                                    </select>
+                                </div>
+                                <input id="char-slash-custom" type="number" step="0.1" min="0" hidden>
+                            </div>
+                            <div class="creator__field">
+                                <label for="char-pierce">Pierce</label>
+                                <div class="creator__input-with-icon">
+                                    <img src="res/pierce.png" alt="" class="creator__input-icon" aria-hidden="true">
+                                    <select id="char-pierce">
+                                        <option value="2.0">Vulnerável</option>
+                                        <option value="1.0" selected>Normal</option>
+                                        <option value="0.5">Resistente</option>
+                                        <option value="custom">Customizada</option>
+                                    </select>
+                                </div>
+                                <input id="char-pierce-custom" type="number" step="0.1" min="0" hidden>
+                            </div>
+                            <div class="creator__field">
+                                <label for="char-blunt">Blunt</label>
+                                <div class="creator__input-with-icon">
+                                    <img src="res/blunt.png" alt="" class="creator__input-icon" aria-hidden="true">
+                                    <select id="char-blunt">
+                                        <option value="2.0">Vulnerável</option>
+                                        <option value="1.0" selected>Normal</option>
+                                        <option value="0.5">Resistente</option>
+                                        <option value="custom">Customizada</option>
+                                    </select>
+                                </div>
+                                <input id="char-blunt-custom" type="number" step="0.1" min="0" hidden>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="creator__section">
+                        <div class="creator__section-header">
+                            <h2 class="creator__section-title">Palavras Chave</h2>
+                            <span class="creator__section-divider" aria-hidden="true"></span>
+                        </div>
+
+                        <div class="creator__field">
+                            <div class="creator__actions creator__actions--keyword-form">
+                                <select id="char-keyword-select"></select>
+                                <button id="char-keyword-add" type="button">Adicionar</button>
+                            </div>
+                        </div>
+
+                        <div id="char-keyword-selected" class="creator__keyword-list" aria-label="Palavras chaves selecionadas no cadastro"></div>
+                    </div>
+
+                    <div class="creator__section">
+                        <div class="creator__section-header">
+                            <h2 class="creator__section-title">Observações</h2>
+                            <span class="creator__section-divider" aria-hidden="true"></span>
+                            <button id="clear-char-notes" class="creator__clear-btn" type="button" aria-label="Limpar Conteúdo do Campo de Observação" title="Limpar Conteúdo do Campo de Observação">🗑</button>
+                        </div>
+
+                        <div class="creator__field">
+                            <textarea id="char-notes" rows="4" placeholder="Escreva observações sobre o personagem..."></textarea>
+                        </div>
+                    </div>
+
+                    <button id="save-character" class="creator__save" type="button">Salvar</button>
+                </div>
+            </div>
+        </section>
+
+        <section id="visualizar-personagem" class="panel" role="tabpanel" hidden>
+            <div class="panel__card">
+                <h1 class="panel__title">Visualizar Personagem</h1>
+                <div class="viewer">
+                    <aside class="viewer__list" aria-label="Lista de personagens" id="character-list"></aside>
+                    <article class="viewer__details" aria-live="polite" id="character-details">
+                        <p class="viewer__empty">Selecione um personagem para ver os detalhes.</p>
+                    </article>
+                </div>
+            </div>
+        </section>
+
+        <section id="editar-personagem" class="panel" role="tabpanel" hidden>
+            <div class="panel__card">
+                <h1 class="panel__title">Editar Personagem</h1>
+                <div id="edit-content" class="edit-content">
+                    <div class="mesa__field">
+                        <label for="edit-character-select">Personagem</label>
+                        <select id="edit-character-select"></select>
+                    </div>
+
+                    <div id="edit-character-form" class="creator">
+                        <div class="creator__preview">
+                            <button class="image-maximize-btn" type="button" data-open-preview="edit-image-preview" aria-label="Maximizar imagem">⛶</button>
+                            <img id="edit-image-preview" src="" alt="Pré-visualização do personagem em edição" data-hover-preview="true" hidden>
+                            <span id="edit-image-placeholder" class="creator__placeholder">Nenhuma imagem selecionada</span>
+                        </div>
+
+                        <div class="creator__field">
+                            <label for="edit-char-image">Imagem</label>
+                            <div class="creator__actions">
+                                <button id="edit-choose-image" type="button">Escolher Imagem</button>
+                                <button id="edit-remove-image" class="creator__action-remove" type="button" hidden>Remover Imagem</button>
+                                <input id="edit-char-image" type="file" accept="image/*" hidden>
+                            </div>
+                        </div>
+
+                        <div class="creator__section">
+                            <div class="creator__section-header">
+                                <h2 class="creator__section-title">Geral</h2>
+                                <span class="creator__section-divider" aria-hidden="true"></span>
+                            </div>
+
+                            <div class="creator__field">
+                                <label for="edit-char-name">Nome</label>
+                                <input id="edit-char-name" type="text" autocomplete="off" placeholder="Ex.: Ricardo">
+                            </div>
+
+                            <div class="creator__grid">
+                                <div class="creator__field">
+                                    <label for="edit-char-vida">Vida</label>
+                                    <div class="creator__input-with-icon">
+                                        <img src="res/hp.png" alt="" class="creator__input-icon" aria-hidden="true">
+                                        <input id="edit-char-vida" type="number" min="0" placeholder="Ex.: 3000">
+                                    </div>
+                                </div>
+                                <div class="creator__field">
+                                    <label for="edit-char-stagger">Stagger</label>
+                                    <div class="creator__input-with-icon">
+                                        <img src="res/stagger.png" alt="" class="creator__input-icon" aria-hidden="true">
+                                        <input id="edit-char-stagger" type="number" min="0" placeholder="Ex.: 1200 (menor que Vida)">
+                                    </div>
+                                </div>
+                                <div class="creator__field">
+                                    <label for="edit-char-speed">Speed</label>
+                                    <div class="creator__input-with-icon">
+                                        <img src="res/speed.png" alt="" class="creator__input-icon" aria-hidden="true">
+                                        <input id="edit-char-speed" type="text" placeholder="Ex.: 2~8">
+                                    </div>
+                                </div>
+                                <div class="creator__field">
+                                    <label for="edit-char-ca">CA</label>
+                                    <div class="creator__input-with-icon">
+                                        <img src="res/ca.png" alt="" class="creator__input-icon" aria-hidden="true">
+                                        <input id="edit-char-ca" type="number" min="0" placeholder="Ex.: 6">
+                                    </div>
+                                </div>
+                                <div class="creator__field">
+                                    <label for="edit-char-movement">Deslocamento</label>
+                                    <div class="creator__input-with-icon">
+                                        <img src="res/movement.png" alt="" class="creator__input-icon" aria-hidden="true">
+                                        <input id="edit-char-movement" type="text" placeholder="Ex.: 45">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="creator__section">
+                            <div class="creator__section-header">
+                                <h2 class="creator__section-title">Resistências</h2>
+                                <span class="creator__section-divider" aria-hidden="true"></span>
+                            </div>
+
+                            <div class="creator__grid creator__grid--resistances">
+                                <div class="creator__field">
+                                    <label for="edit-char-slash">Slash</label>
+                                    <div class="creator__input-with-icon">
+                                        <img src="res/slash.png" alt="" class="creator__input-icon" aria-hidden="true">
+                                        <select id="edit-char-slash">
+                                            <option value="2.0">Vulnerável</option>
+                                            <option value="1.0" selected>Normal</option>
+                                            <option value="0.5">Resistente</option>
+                                            <option value="custom">Customizada</option>
+                                        </select>
+                                    </div>
+                                    <input id="edit-char-slash-custom" type="number" step="0.1" min="0" hidden>
+                                </div>
+                                <div class="creator__field">
+                                    <label for="edit-char-pierce">Pierce</label>
+                                    <div class="creator__input-with-icon">
+                                        <img src="res/pierce.png" alt="" class="creator__input-icon" aria-hidden="true">
+                                        <select id="edit-char-pierce">
+                                            <option value="2.0">Vulnerável</option>
+                                            <option value="1.0" selected>Normal</option>
+                                            <option value="0.5">Resistente</option>
+                                            <option value="custom">Customizada</option>
+                                        </select>
+                                    </div>
+                                    <input id="edit-char-pierce-custom" type="number" step="0.1" min="0" hidden>
+                                </div>
+                                <div class="creator__field">
+                                    <label for="edit-char-blunt">Blunt</label>
+                                    <div class="creator__input-with-icon">
+                                        <img src="res/blunt.png" alt="" class="creator__input-icon" aria-hidden="true">
+                                        <select id="edit-char-blunt">
+                                            <option value="2.0">Vulnerável</option>
+                                            <option value="1.0" selected>Normal</option>
+                                            <option value="0.5">Resistente</option>
+                                            <option value="custom">Customizada</option>
+                                        </select>
+                                    </div>
+                                    <input id="edit-char-blunt-custom" type="number" step="0.1" min="0" hidden>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="creator__section">
+                            <div class="creator__section-header">
+                                <h2 class="creator__section-title">Palavras Chave</h2>
+                                <span class="creator__section-divider" aria-hidden="true"></span>
+                            </div>
+
+                            <div class="creator__field">
+                                <div class="creator__actions creator__actions--keyword-form">
+                                    <select id="edit-char-keyword-select"></select>
+                                    <button id="edit-char-keyword-add" type="button">Adicionar</button>
+                                </div>
+                            </div>
+
+                            <div id="edit-char-keyword-selected" class="creator__keyword-list" aria-label="Palavras chaves selecionadas na edição"></div>
+                        </div>
+
+                        <div class="creator__section">
+                            <div class="creator__section-header">
+                                <h2 class="creator__section-title">Observações</h2>
+                                <span class="creator__section-divider" aria-hidden="true"></span>
+                                <button id="clear-edit-char-notes" class="creator__clear-btn" type="button" aria-label="Limpar Conteúdo do Campo de Observação" title="Limpar Conteúdo do Campo de Observação">🗑</button>
+                            </div>
+
+                            <div class="creator__field">
+                                <textarea id="edit-char-notes" rows="4" placeholder="Escreva observações sobre o personagem..."></textarea>
+                            </div>
+                        </div>
+
+                        <button id="edit-save-character" class="creator__save" type="button">Salvar Alterações</button>
+                    </div>
+                </div>
+
+                <article id="edit-empty-state" class="viewer__details viewer__details--empty" aria-live="polite" hidden>
+                    <p class="viewer__empty viewer__empty--highlight">Sem Personagens Criados</p>
+                </article>
+            </div>
+        </section>
+
+        <section id="mesa" class="panel" role="tabpanel" hidden>
+            <div class="panel__card">
+                <h1 class="panel__title">Combate Simples</h1>
+                <div class="mesa">
+                    <p class="mesa__description">Visualize o status dos personagens cadastrados.</p>
+
+                    <div class="mesa__select-container">
+                        <div class="mesa__field">
+                            <label for="mesa-character">Personagem</label>
+                            <select id="mesa-character">
+                                <option value="">Selecione um Personagem</option>
+                            </select>
+                        </div>
+                        <button id="mesa-load-character" class="mesa__load-btn" type="button">Carregar Personagem</button>
+                    </div>
+
+                    <div class="mesa__content-wrapper" id="mesa-content-wrapper" hidden>
+                        <div class="mesa__left-content">
+                            <article id="mesa-status" class="mesa__status" aria-live="polite"></article>
+
+                            <div id="mesa-info" class="mesa__info"></div>
+                        </div>
+
+                        <div id="mesa-vertical-separator" class="mesa__vertical-separator" aria-hidden="true" hidden></div>
+
+                        <article id="mesa-damage-card" class="mesa__damage-card" aria-label="Controle de dano" hidden>
+                            <h2 class="mesa__damage-title">Dano</h2>
+                            <div class="mesa__field mesa__damage-section">
+                                <div class="mesa__damage-input-row mesa__damage-input-row--type">
+                                    <input id="mesa-damage" type="number" min="0" placeholder="Ex.: 150">
+                                    <div class="mesa__damage-type-separator" aria-hidden="true"></div>
+                                    <div class="mesa__damage-type-toggles" aria-label="Tipo de dano">
+                                        <label class="mesa__damage-type-toggle" for="mesa-damage-slash-toggle">
+                                            <input id="mesa-damage-slash-toggle" type="checkbox" checked>
+                                            <span>Slash</span>
+                                        </label>
+                                        <label class="mesa__damage-type-toggle" for="mesa-damage-pierce-toggle">
+                                            <input id="mesa-damage-pierce-toggle" type="checkbox">
+                                            <span>Pierce</span>
+                                        </label>
+                                        <label class="mesa__damage-type-toggle" for="mesa-damage-blunt-toggle">
+                                            <input id="mesa-damage-blunt-toggle" type="checkbox">
+                                            <span>Blunt</span>
+                                        </label>
+                                        <label class="mesa__damage-type-toggle" for="mesa-damage-stagger-toggle">
+                                            <input id="mesa-damage-stagger-toggle" type="checkbox">
+                                            <span>Stagger</span>
+                                        </label>
+                                    </div>
+                                    <div class="mesa__damage-type-separator" aria-hidden="true"></div>
+                                    <button id="mesa-attack-button" class="mesa__damage-attack" type="button" aria-label="Aplicar dano" title="Aplicar dano ao personagem selecionado">
+                                        <img src="res/attack.png" alt="" aria-hidden="true">
+                                    </button>
+                                </div>
+                            </div>
+
+                            <h2 class="mesa__damage-title">Curar</h2>
+                            <div class="mesa__field mesa__damage-section">
+                                    <div class="mesa__damage-input-row mesa__damage-input-row--heal">
+                                        <input id="mesa-heal" type="number" min="0" placeholder="Ex.: 150">
+                                    <div class="mesa__heal-separator" aria-hidden="true"></div>
+                                    <div class="mesa__heal-toggles" aria-label="Alvos da cura">
+                                        <label class="mesa__heal-toggle" for="mesa-heal-life-toggle">
+                                            <input id="mesa-heal-life-toggle" type="checkbox">
+                                            <span>Vida</span>
+                                        </label>
+                                        <label class="mesa__heal-toggle" for="mesa-heal-stagger-toggle">
+                                            <input id="mesa-heal-stagger-toggle" type="checkbox">
+                                            <span>Stagger</span>
+                                        </label>
+                                    </div>
+                                    <div class="mesa__heal-separator" aria-hidden="true"></div>
+                                    <button id="mesa-heal-button" class="mesa__damage-attack" type="button" aria-label="Aplicar cura" title="Aplicar cura ao personagem selecionado">
+                                        <img src="res/hp_heal.png" alt="" aria-hidden="true">
+                                    </button>
+                                </div>
+                            </div>
+
+                            <h2 class="mesa__damage-title">Efeitos</h2>
+                            <div class="mesa__field mesa__damage-section">
+                                <div class="mesa__damage-input-row mesa__damage-input-row--effect">
+                                    <div class="mesa__effect-picker">
+                                        <select id="mesa-effect-select" aria-label="Selecionar efeito">
+                                            <option value="" selected>Nenhum Efeito Cadastrado</option>
+                                        </select>
+                                    </div>
+                                    <div class="mesa__effect-separator" aria-hidden="true"></div>
+                                    <button id="mesa-effect-add-button" class="mesa__effect-add" type="button" aria-label="Adicionar efeito" title="Adicionar efeito">
+                                        +
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div id="mesa-effects-list" class="mesa__effect-list" aria-label="Efeitos aplicados"></div>
+
+                            <h2 class="mesa__damage-title">Comentários</h2>
+                            <div class="mesa__field mesa__damage-section">
+                                <textarea id="mesa-comments" rows="4" placeholder="Ex.: O personagem vai focar em fazer..."></textarea>
+                            </div>
+                        </article>
+
+                        <div class="mesa__right-content" id="mesa-right-content" hidden>
+                            <div class="mesa__preview">
+                                <button class="image-maximize-btn" type="button" data-open-preview="mesa-character-image" aria-label="Maximizar imagem">⛶</button>
+                                <img id="mesa-character-image" src="" alt="Imagem do personagem" class="mesa__character-image" hidden>
+                                <img id="mesa-character-stagger-overlay" src="res/staggered.png" alt="" class="mesa__character-stagger-overlay" aria-hidden="true" hidden>
+                                <span id="mesa-image-placeholder" class="mesa__placeholder">Nenhuma imagem selecionada</span>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+
+        <section id="efeitos" class="panel" role="tabpanel" hidden>
+            <div class="panel__card">
+                <div class="panel__heading">
+                    <h1 class="panel__title">Efeitos</h1>
+                    <button id="effects-open-form" class="effects__add-button" type="button" aria-label="Adicionar efeito" title="Adicionar efeito">+</button>
+                </div>
+                <div class="creator creator--keywords">
+                    <div id="effects-registry-list" class="effects__registry" aria-label="Lista de efeitos cadastrados"></div>
+
+                    <div id="effects-form" class="creator__section" hidden>
+                        <div class="panel__heading">
+                            <h1 class="panel__title">Cadastro de Efeito</h1>
+                            <button id="effects-cancel" class="effects__icon-button" type="button" aria-label="Fechar cadastro de efeito" title="Fechar">×</button>
+                        </div>
+
+                        <div class="creator__preview creator__preview--effect">
+                            <button class="image-maximize-btn" type="button" data-open-preview="effects-image-preview" aria-label="Maximizar imagem">⛶</button>
+                            <img id="effects-image-preview" src="" alt="Pré-visualização do efeito" data-hover-preview="true" hidden>
+                            <span id="effects-image-placeholder" class="creator__placeholder">Nenhuma imagem selecionada</span>
+                        </div>
+
+                        <div class="creator__field">
+                            <label for="effects-image">Imagem</label>
+                            <div class="creator__actions">
+                                <button id="effects-choose-image" type="button">Adicionar Imagem</button>
+                                <button id="effects-remove-image" class="creator__action-remove" type="button" hidden>Remover Imagem</button>
+                                <input id="effects-image" type="file" accept="image/*" hidden>
+                            </div>
+                        </div>
+
+                        <div class="creator__field">
+                            <label for="effects-name">Nome do Efeito</label>
+                            <div class="creator__actions creator__actions--keyword-form">
+                                <input id="effects-name" type="text" autocomplete="off" placeholder="Ex.: Burn">
+                            </div>
+                        </div>
+
+                        <div class="creator__field creator__field--behavior">
+                            <label>Comportamento</label>
+                            <div class="creator__actions creator__actions--keyword-form creator__behavior-options" role="radiogroup" aria-label="Selecionar comportamento do efeito">
+                                <label class="creator__behavior-option">
+                                    <input type="radio" name="effects-behavior" value="standard" checked>
+                                    <span>Padrão</span>
+                                </label>
+                                <label class="creator__behavior-option">
+                                    <input type="radio" name="effects-behavior" value="modifier">
+                                    <span>Modificador</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div id="effects-modifier-how-field" class="creator__field" hidden>
+                            <label for="effects-modifier-how">Funcionalidade</label>
+                            <div class="creator__actions creator__actions--keyword-form">
+                                <select id="effects-modifier-how" aria-label="Selecionar funcionalidade do modificador">
+                                    <option value="reduce" selected>Reduz</option>
+                                    <option value="increase">Aumenta</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div id="effects-modifier-properties-field" class="creator__field" hidden>
+                            <label for="effects-modifier-properties">Tipo</label>
+                            <div class="creator__actions creator__actions--keyword-form">
+                                <select id="effects-modifier-properties" aria-label="Selecionar tipo do modificador">
+                                    <option value="power">Potência</option>
+                                    <option value="power-and-count" selected>Potência e Count</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div id="effects-standard-fields">
+                            <div class="creator__field">
+                                <label for="effects-target">Afeta</label>
+                                <div class="creator__actions creator__actions--keyword-form">
+                                    <select id="effects-target" aria-label="Selecionar alvo do efeito">
+                                        <option value="life" selected>Vida</option>
+                                        <option value="stagger">Stagger</option>
+                                        <option value="life-and-stagger">Vida e Stagger</option>
+                                        <option value="speed">Speed</option>
+                                        <option value="ca">CA</option>
+                                        <option value="none">Nada</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div id="effects-how-field" class="creator__field">
+                                <label for="effects-how">Funcionalidade</label>
+                                <div class="creator__actions creator__actions--keyword-form">
+                                    <select id="effects-how" aria-label="Selecionar funcionalidade do efeito">
+                                        <option value="reduce" selected>Reduz</option>
+                                        <option value="increase">Aumenta</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="creator__field">
+                                <label for="effects-properties">Tipo</label>
+                                <div class="creator__actions creator__actions--keyword-form">
+                                    <select id="effects-properties" aria-label="Selecionar opções do efeito">
+                                        <option value="power">Potência</option>
+                                        <option value="power-and-count" selected>Potência e Count</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="creator__field">
+                                <label for="effects-activation">Funcionamento</label>
+                                <div class="creator__actions creator__actions--keyword-form">
+                                    <select id="effects-activation" aria-label="Selecionar funcionamento do efeito">
+                                        <option value="manual" selected>Manual</option>
+                                        <option value="modifier">Ativação</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div id="effects-modifier-definition-field" class="creator__field" hidden>
+                                <label for="effects-modifier-definition">Definição da Ativação</label>
+                                <div class="creator__actions creator__actions--keyword-form">
+                                    <select id="effects-modifier-definition" aria-label="Selecionar definição da ativação">
+                                        <option value="attack" selected>Ataque</option>
+                                        <option value="heal">Cura</option>
+                                        <option value="attack-and-heal">Ataque e Cura</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="creator__field">
+                                <label for="effects-description">Descrição</label>
+                                <textarea id="effects-description" rows="4" placeholder="Descreva resumidamente o que o efeito faz..."></textarea>
+                            </div>
+                        </div>
+
+                        <button id="effects-add" class="creator__save" type="button">Salvar Efeito</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="palavras-chave" class="panel" role="tabpanel" hidden>
+            <div class="panel__card">
+                <h1 class="panel__title">Cadastro de Palavras Chave</h1>
+                <div class="creator creator--keywords">
+                    <div class="creator__field">
+                        <label for="keyword-new">Nova Palavra Chave</label>
+                        <div class="creator__actions creator__actions--keyword-form">
+                            <input id="keyword-new" type="text" autocomplete="off" placeholder="Ex.: The Middle">
+                            <button id="keyword-add" type="button">Adicionar</button>
+                        </div>
+                    </div>
+
+                    <div class="creator__section">
+                        <div class="creator__section-header">
+                            <h2 class="creator__section-title">Palavras Cadastradas</h2>
+                            <span class="creator__section-divider" aria-hidden="true"></span>
+                        </div>
+
+                        <div id="keyword-registry-list" class="creator__keyword-list" aria-label="Lista de palavras chaves cadastradas"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <div id="caption-modal" class="caption-modal" role="dialog" aria-modal="true" aria-labelledby="caption-title" hidden>
+        <div class="caption-modal__backdrop" data-close-caption></div>
+        <div class="caption-modal__card">
+            <h2 id="caption-title" class="caption-modal__title">Confirmacao</h2>
+            <p id="caption-message" class="caption-modal__message"></p>
+            <div class="caption-modal__actions">
+                <button id="caption-cancel" class="caption-modal__button caption-modal__button--secondary" type="button">Cancelar</button>
+                <button id="caption-confirm" class="caption-modal__button caption-modal__button--primary" type="button">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="image-hover-preview" class="image-hover-preview" hidden>
+        <div class="image-hover-preview__backdrop"></div>
+        <div class="image-hover-preview__card" role="dialog" aria-modal="true" aria-label="Visualização ampliada da imagem">
+            <button id="image-hover-preview-reset" class="image-hover-preview__reset" type="button" aria-label="Resetar zoom e posição" hidden>↺</button>
+            <button id="image-hover-preview-close" class="image-hover-preview__close" type="button" aria-label="Fechar visualização">×</button>
+            <div class="image-hover-preview__viewport">
+                <img id="image-hover-preview-img" src="" alt="">
+            </div>
+            <p id="image-hover-preview-label"></p>
+        </div>
+    </div>
+
+    <script src="main.js"></script>
+</body>
+</html>
