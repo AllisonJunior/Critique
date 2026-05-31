@@ -2088,6 +2088,39 @@ body:has(#inicio.panel--active)
     overflow-wrap: anywhere;
 }
 
+.mesa__status-shield
+{
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: rgba(185, 208, 235, 0.4);
+    color: #18324f;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.mesa__status-shield-remove
+{
+    appearance: none;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    font-weight: 900;
+    line-height: 1;
+    padding: 0 0 0 4px;
+    cursor: pointer;
+}
+
+.mesa__status-shield-remove:hover,
+.mesa__status-shield-remove:focus-visible
+{
+    color: #0f2133;
+    outline: none;
+}
+
 .mesa__speed-input
 {
     width: 100%;
@@ -2609,6 +2642,18 @@ body:has(#inicio.panel--active)
     background: linear-gradient(180deg, #d5e8d5 0%, #bbdcbc 100%);
 }
 
+.mesa__damage-attack--shield
+{
+    background: linear-gradient(180deg, #dbe8f7 0%, #b9d0eb 100%);
+    color: #18324f;
+}
+
+.mesa__damage-attack--shield:hover,
+.mesa__damage-attack--shield:focus-visible
+{
+    background: linear-gradient(180deg, #d0e2f6 0%, #a9c8e7 100%);
+}
+
 .mesa__damage-section--type,
 .mesa__damage-section--heal
 {
@@ -2625,7 +2670,7 @@ body:has(#inicio.panel--active)
 {
     width: min(100%, 300px);
     justify-self: end;
-    grid-template-columns: minmax(0, 1fr) 44px;
+    grid-template-columns: minmax(0, 1fr) 44px 44px;
 }
 
 .mesa__damage-section--type .mesa__damage-main-row input,
