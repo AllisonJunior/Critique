@@ -2395,7 +2395,7 @@ body:has(#inicio.panel--active)
 .mesa__damage-main-row
 {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 44px 44px;
+    grid-template-columns: minmax(0, 1fr) 44px 44px 44px;
     gap: 12px;
     align-items: center;
 }
@@ -2580,6 +2580,21 @@ body:has(#inicio.panel--active)
 .mesa__damage-main-row .mesa__damage-attack
 {
     justify-self: end;
+}
+
+.mesa__damage-attack--life
+{
+    background: linear-gradient(180deg, #f8d8d8 0%, #f0b9b9 100%);
+    color: #5a1212;
+    font-size: 18px;
+    font-weight: 900;
+    letter-spacing: 0.02em;
+}
+
+.mesa__damage-attack--life:hover,
+.mesa__damage-attack--life:focus-visible
+{
+    background: linear-gradient(180deg, #f4caca 0%, #eaa9a9 100%);
 }
 
 .mesa__damage-attack--stagger

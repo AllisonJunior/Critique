@@ -91,6 +91,7 @@ const mesaDamageBluntToggle = document.getElementById('mesa-damage-blunt-toggle'
 let mesaCharacterStaggerOverlay = document.getElementById('mesa-character-stagger-overlay');
 const mesaAttackButton = document.getElementById('mesa-attack-button');
 const mesaStaggerAttackButton = document.getElementById('mesa-stagger-attack-button');
+const mesaLifeAttackButton = document.getElementById('mesa-life-attack-button');
 const mesaHealInput = document.getElementById('mesa-heal');
 const mesaHealButton = document.getElementById('mesa-heal-button');
 const mesaHealLifeToggle = document.getElementById('mesa-heal-life-toggle');
@@ -1463,7 +1464,7 @@ function updateEffectsBehaviorState() {
 /* Targets (Afeta) helpers - select + add button with removable tags */
 function getSelectedEffectTargets() {
 	if (!effectsTargetList) {
-		return [DEFAULT_EFFECT_TARGET];
+		return [];
 	}
 
 	return Array.from(effectsTargetList.querySelectorAll('[data-value]')).map((el) => String(el.dataset.value));
@@ -1485,6 +1486,10 @@ function setSelectedEffectTargets(values) {
 
 function getSelectedEffectTargetNormalized() {
 	const selected = getSelectedEffectTargets();
+	if (!selected.length) {
+		return 'none';
+	}
+
 	const hasLife = selected.includes('life');
 	const hasStagger = selected.includes('stagger');
 	const hasSpeed = selected.includes('speed');
@@ -3431,7 +3436,7 @@ function applyMesaEffect(effectInstanceId) {
 	renderMesaStatus();
 }
 
-function applyMesaDamage({ staggerOnly = false } = {}) {
+function applyMesaDamage({ staggerOnly = false, lifeOnly = false } = {}) {
 	if (!mesaDamageInput) {
 		return;
 	}
@@ -3448,6 +3453,16 @@ function applyMesaDamage({ staggerOnly = false } = {}) {
 
 	const mesaState = readMesaState();
 	const currentEntry = getMesaStateEntry(selectedCharacter, mesaState);
+	if (lifeOnly) {
+		const nextLife = Math.max(currentEntry.life - damage, 0);
+		setMesaStateEntry(selectedCharacter, mesaState, nextLife, currentEntry.stagger, currentEntry.effects);
+		writeMesaState(mesaState);
+		renderMesaStatus();
+		mesaDamageInput.value = '';
+		mesaDamageInput.focus();
+		return;
+	}
+
 	if (staggerOnly) {
 		const nextStagger = Math.max(currentEntry.stagger - damage, 0);
 		setMesaStateEntry(selectedCharacter, mesaState, currentEntry.life, nextStagger, currentEntry.effects);
@@ -3476,7 +3491,7 @@ function applyMesaDamage({ staggerOnly = false } = {}) {
 		: applyBehaviorDamageModifiers(appliedDamage, 'life', modifierAttackResolution.nextEffects);
 	const nextLife = staggerOnly
 		? currentLife
-		: Math.max(currentLife - adjustedLifeDamage - normalizeNonNegativeIntOrDefault(modifierAttackResolution.bonus, 0), 0);
+		: Math.max(currentLife - adjustedLifeDamage, 0);
 	const nextStagger = Math.max(currentStagger - adjustedStaggerDamage, 0);
 
 	setMesaStateEntry(selectedCharacter, mesaState, nextLife, nextStagger, modifierAttackResolution.nextEffects);
@@ -4746,6 +4761,10 @@ mesaAttackButton?.addEventListener('click', () => {
 
 mesaStaggerAttackButton?.addEventListener('click', () => {
 	applyMesaDamage({ staggerOnly: true });
+});
+
+mesaLifeAttackButton?.addEventListener('click', () => {
+	applyMesaDamage({ lifeOnly: true });
 });
 
 [mesaDamageSlashToggle, mesaDamagePierceToggle, mesaDamageBluntToggle].forEach((toggle, index) => {
