@@ -3,8 +3,7 @@ body
     margin: 0;
     min-height: 100vh;
     background:
-        radial-gradient(circle at top, rgba(94, 104, 117, 0.18), transparent 36%),
-        linear-gradient(180deg, #eef1f5 0%, #e5e9ee 100%);
+        #ffffff;
     font-family: Arial, Helvetica, sans-serif;
     color: #101418;
 }
@@ -164,6 +163,14 @@ body:has(#inicio.panel--active)
     pointer-events: auto;
 }
 
+.navbar__dropdown--open .navbar__submenu
+{
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+    pointer-events: auto;
+}
+
 .navbar__tab
 {
     appearance: none;
@@ -220,7 +227,7 @@ body:has(#inicio.panel--active)
 
 .panel__card
 {
-    max-width: 1120px;
+    max-width: 1200px;
     margin: 0 auto;
     border-radius: 22px;
     padding: 24px;
@@ -255,9 +262,9 @@ body:has(#inicio.panel--active)
 {
     min-height: calc(100vh - 140px);
     display: flex;
-    align-items: flex-end;
-    justify-content: flex-end;
-    padding: 0 8px 8px;
+    align-items: center;
+    justify-content: center;
+    padding: 20px 8px 8px;
 }
 
 .home__content
@@ -266,6 +273,16 @@ body:has(#inicio.panel--active)
     flex-direction: column;
     align-items: center;
     gap: 14px;
+    text-align: center;
+}
+
+.home__actions
+{
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
 }
 
 .home__gif
@@ -274,6 +291,8 @@ body:has(#inicio.panel--active)
     max-width: 100%;
     height: auto;
     object-fit: contain;
+    border-radius: 18px;
+    box-shadow: 0 18px 40px rgba(16, 20, 24, 0.12);
 }
 
 .home__wipe-button
@@ -292,6 +311,44 @@ body:has(#inicio.panel--active)
     box-shadow: 0 12px 26px rgba(217, 44, 44, 0.32);
     transform-origin: center;
     transition: transform 0.18s ease, box-shadow 0.18s ease, filter 0.18s ease;
+}
+
+.home__action-button
+{
+    min-height: 48px;
+    border: 1px solid rgba(16, 20, 24, 0.14);
+    border-radius: 14px;
+    padding: 0 18px;
+    background: rgba(255, 255, 255, 0.9);
+    color: #101418;
+    font: inherit;
+    font-weight: 800;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    cursor: pointer;
+    box-shadow: 0 10px 22px rgba(16, 20, 24, 0.1);
+    transition: transform 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease, color 0.18s ease;
+}
+
+.home__action-button--primary
+{
+    background: linear-gradient(180deg, #1d2a35 0%, #101418 100%);
+    color: #ffffff;
+    border-color: rgba(16, 20, 24, 0.28);
+}
+
+.home__action-button:hover,
+.home__action-button:focus-visible
+{
+    transform: translateY(-1px);
+    box-shadow: 0 14px 28px rgba(16, 20, 24, 0.16);
+    outline: none;
+}
+
+.home__action-button--primary:hover,
+.home__action-button--primary:focus-visible
+{
+    background: linear-gradient(180deg, #223241 0%, #101418 100%);
 }
 
 .home__wipe-button:hover,
@@ -418,22 +475,16 @@ body:has(#inicio.panel--active)
     gap: 8px;
 }
 
+.creator__field--effect-name
+{
+    margin-top: 10px;
+}
+
 .creator__field label
 {
     font-size: 14px;
     font-weight: 700;
     color: #24303a;
-}
-
-.creator__field--behavior > label
-{
-    display: block;
-}
-
-#effects-standard-fields
-{
-    display: grid;
-    gap: 14px;
 }
 
 .creator__input-with-icon
@@ -601,30 +652,209 @@ body:has(#inicio.panel--active)
     flex: 1 1 220px;
 }
 
-.creator__behavior-options
+.creator__actions--effect-name
 {
-    gap: 14px;
+    align-items: flex-start;
+    flex-wrap: nowrap;
+    width: 100%;
 }
 
-.creator__behavior-option
+.effects__name-field
 {
+    display: grid;
+    gap: 8px;
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.effects__name-field input
+{
+    width: 100%;
+}
+
+.effects__mode-field {
+    display: grid;
+    gap: 8px;
+    flex: 0 0 auto;
+}
+
+.effects__modifier-how-field
+{
+    display: grid;
+    gap: 8px;
+}
+
+.effects__description-value-field {
+    display: flex;
+    align-items: center;
+}
+
+.effects__description-value-option {
     display: inline-flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
     font-size: 14px;
-    font-weight: 700;
-    color: #24303a;
-    cursor: pointer;
+    font-weight: 600;
+    color: #2f3a4a;
     user-select: none;
 }
 
-.creator__behavior-option input[type="radio"]
-{
-    width: 18px;
-    height: 18px;
-    margin: 0;
+/* Row to place Função and Afeta side-by-side */
+.effects__row {
+    display: flex;
+    gap: 24px; /* spacing between columns */
+    align-items: flex-start;
+}
+.effects__row .creator__field {
+    flex: 1 1 0; /* both fields expand to the right */
+    min-width: 0;
+}
+
+.effects-target-select-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    width: 100%; /* ensure the select+button row fills the column */
+}
+.effects-target-select-row select {
+    flex: 1 1 auto;
+    width: 100%;
+}
+.effects-target-select-row button#effects-target-add {
     flex: 0 0 auto;
-    accent-color: #b42318;
+    padding: 8px 12px;
+}
+
+
+.effects-target-list.creator__keyword-list {
+    margin-top: 8px;
+    width: 100%; /* force it to a new line under the select */
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+/* hide when no targets have been added */
+.effects-target-list:empty {
+    display: none;
+}
+
+/* align chips to the left */
+.effects-target-list {
+    justify-content: flex-start;
+    flex: 0 0 100%; /* force a new row under the select and button */
+}
+
+/* stronger selector to avoid accidental overrides from parent flex rules */
+#effects-target-list {
+    justify-content: flex-start !important;
+    align-self: flex-start !important;
+    margin-left: 0 !important;
+}
+
+/* ensure the list aligns to the left edge of the form column */
+.effects__row .creator__field .creator__actions .effects-target-list {
+    margin-left: 0;
+    align-self: flex-start;
+}
+
+/* make sure the chip contents align text then remove button to the right */
+.effects-target-list .creator__keyword-chip {
+    /* keep chip contents centered vertically like other keyword chips */
+    justify-content: center;
+}
+.effects-target-list .creator__keyword-chip .creator__keyword-remove {
+    margin-left: 8px;
+}
+
+/* make sure the remove button is a small rounded control with centered X */
+#effects-target-list .creator__keyword-remove {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    font-size: 12px;
+    line-height: 1;
+    border-radius: 999px;
+}
+
+/* Description field styling */
+#effects-description,
+#effects-description:focus {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid rgba(16,20,24,0.12);
+    resize: vertical;
+    font: inherit;
+}
+
+/* Reuse keyword chip styles for effect targets */
+.effects-target-list .creator__keyword-chip {
+    background: rgba(16, 20, 24, 0.06);
+    border: 1px solid rgba(16, 20, 24, 0.08);
+}
+
+.effects__mode-label
+{
+    font-size: 14px;
+    font-weight: 700;
+    color: #24303a;
+}
+
+.effects__property-selector
+{
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    min-height: 44px;
+    box-sizing: border-box;
+    padding: 4px;
+    border: 1px solid rgba(16, 20, 24, 0.16);
+    border-radius: 12px;
+    background: #ffffff;
+}
+
+.effects__property-option
+{
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 34px;
+    box-sizing: border-box;
+    padding: 0 10px;
+    border-radius: 9px;
+    color: #24303a;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    user-select: none;
+    transition: background-color 0.16s ease, color 0.16s ease;
+}
+
+.effects__property-option input
+{
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+    margin: 0;
+}
+
+.effects__property-option:has(input:checked)
+{
+    background: #101418;
+    color: #ffffff;
+}
+
+.effects__property-option:has(input:focus-visible)
+{
+    outline: 2px solid rgba(16, 20, 24, 0.28);
+    outline-offset: 1px;
 }
 
 .creator__actions button,
@@ -662,6 +892,28 @@ body:has(#inicio.panel--active)
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 12px;
+}
+
+.creator__grid--general
+{
+    grid-template-columns: 1fr;
+}
+
+.creator__grid--general .creator__field
+{
+    width: 100%;
+}
+
+.mesa__status-label--button
+{
+    cursor: pointer;
+    user-select: none;
+}
+
+.mesa__status-label--button:hover,
+.mesa__status-label--button:focus-visible
+{
+    text-decoration: underline;
 }
 
 .creator__grid--resistances
@@ -780,6 +1032,8 @@ body:has(#inicio.panel--active)
     font-size: 13px;
     color: #4c5a67;
     font-weight: 600;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
 }
 
 .effects__item-description
@@ -788,6 +1042,8 @@ body:has(#inicio.panel--active)
     font-size: 12px;
     color: #5a6976;
     line-height: 1.35;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
 }
 
 .effects__item-remove
@@ -1522,7 +1778,15 @@ body:has(#inicio.panel--active)
     background: #f7f9fb;
     padding: 14px;
     display: grid;
-    gap: 20px;
+    gap: 12px;
+}
+
+.mesa__status-body
+{
+    display: grid;
+    grid-template-columns: minmax(180px, 220px) minmax(0, 1fr);
+    gap: 16px;
+    align-items: start;
 }
 
 .mesa__status-header
@@ -1531,6 +1795,45 @@ body:has(#inicio.panel--active)
     justify-content: space-between;
     align-items: center;
     gap: 10px;
+}
+
+.mesa__status-actions
+{
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.mesa__status-close-btn
+{
+    min-width: 34px;
+    min-height: 34px;
+    border: 1px solid rgba(16, 20, 24, 0.18);
+    border-radius: 10px;
+    background: #101418;
+    color: #ffffff;
+    font: inherit;
+    font-size: 14px;
+    font-weight: 800;
+    line-height: 1;
+    cursor: pointer;
+    transition: background 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.mesa__status-close-btn:hover,
+.mesa__status-close-btn:focus-visible
+{
+    background: #24303a;
+    transform: translateY(-1px);
+    box-shadow: 0 8px 18px rgba(16, 20, 24, 0.12);
+    outline: none;
+}
+
+.mesa__status-close-btn:active
+{
+    transform: translateY(0);
+    box-shadow: none;
 }
 
 .mesa__status-reset-btn
@@ -1544,6 +1847,58 @@ body:has(#inicio.panel--active)
     gap: 16px;
 }
 
+.mesa__status-preview
+{
+    position: relative;
+    width: 100%;
+    min-height: 240px;
+    border-radius: 12px;
+    border: 1px solid rgba(16, 20, 24, 0.1);
+    background: #dfe5ea;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.mesa__status-preview .image-maximize-btn
+{
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 1;
+}
+
+.mesa__status-preview .mesa__character-image
+{
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+    cursor: pointer;
+}
+
+.mesa__status-preview .mesa__character-stagger-overlay
+{
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    pointer-events: none;
+}
+
+.mesa__status-preview .mesa__placeholder
+{
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    text-align: center;
+}
+
 .mesa__status-metric
 {
     display: grid;
@@ -1552,8 +1907,10 @@ body:has(#inicio.panel--active)
 
 .mesa__status-metric--simple
 {
-    display: flex;
-    align-items: center;
+    display: inline-grid;
+    justify-items: start;
+    min-width: 0;
+    width: fit-content;
 }
 
 .mesa__status-title
@@ -1562,9 +1919,23 @@ body:has(#inicio.panel--active)
     font-size: 22px;
     display: inline-block;
     width: fit-content;
-    padding-bottom: 10px;
+    padding-bottom: 6px;
     border-bottom: 1px solid rgba(16, 20, 24, 0.28);
-    margin-bottom: 8px;
+    margin-bottom: 2px;
+}
+
+.mesa__status-title--button
+{
+    cursor: pointer;
+    user-select: none;
+}
+
+.mesa__status-title--button:hover,
+.mesa__status-title--button:focus-visible
+{
+    color: #2b3138;
+    border-bottom-color: rgba(43, 49, 56, 0.55);
+    outline: none;
 }
 
 .mesa__status-text
@@ -1575,6 +1946,10 @@ body:has(#inicio.panel--active)
     display: flex;
     align-items: center;
     gap: 8px;
+    min-width: 0;
+    flex-wrap: wrap;
+    row-gap: 4px;
+    width: fit-content;
 }
 
 .mesa__status-label
@@ -1586,6 +1961,7 @@ body:has(#inicio.panel--active)
     display: inline-flex;
     align-items: center;
     gap: 6px;
+    min-width: 0;
 }
 
 .mesa__status-icon
@@ -1707,11 +2083,15 @@ body:has(#inicio.panel--active)
     color: #101418;
     font: inherit;
     font-weight: 400;
+    white-space: normal;
+    min-width: 0;
+    overflow-wrap: anywhere;
 }
 
 .mesa__speed-input
 {
-    width: 48px;
+    width: 100%;
+    min-width: 72px;
     height: 28px;
     border: 1px solid rgba(16, 20, 24, 0.24);
     border-radius: 8px;
@@ -1822,13 +2202,59 @@ body:has(#inicio.panel--active)
     cursor: not-allowed;
 }
 
+.mesa__instance-bar
+{
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+}
+
+.mesa__instance-bar[hidden]
+{
+    display: none !important;
+}
+
+.mesa__instance-chip
+{
+    appearance: none;
+    border: 1px solid rgba(16, 20, 24, 0.14);
+    border-radius: 999px;
+    min-height: 36px;
+    padding: 0 14px;
+    background: #f7f9fb;
+    color: #40505f;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.18s ease, color 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+
+.mesa__instance-chip:hover,
+.mesa__instance-chip:focus-visible
+{
+    background: #e8edf3;
+    color: #101418;
+    transform: translateY(-1px);
+    outline: none;
+}
+
+.mesa__instance-chip--active
+{
+    background: #101418;
+    color: #ffffff;
+    border-color: #101418;
+    box-shadow: 0 8px 18px rgba(16, 20, 24, 0.16);
+}
+
 .mesa__content-wrapper
 {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 1px minmax(180px, 220px);
+    grid-template-columns: minmax(0, 1.5fr) minmax(290px, 330px);
     grid-template-areas:
-        "left separator right"
-        "damage damage damage";
+        "left damage"
+        "combat combat";
     gap: 16px;
     align-items: stretch;
     width: 100%;
@@ -1839,14 +2265,83 @@ body:has(#inicio.panel--active)
     grid-area: left;
 }
 
+.mesa__combat-card
+{
+    grid-area: combat;
+    display: grid;
+    gap: 12px;
+    width: 100%;
+    max-width: none;
+    border-radius: 12px;
+    border: 1px solid rgba(16, 20, 24, 0.18);
+    background: linear-gradient(180deg, #cfe2f7 0%, #b9d2ee 100%);
+    padding: 14px;
+    box-sizing: border-box;
+}
+
+.mesa__combat-tabs
+{
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.mesa__combat-tab
+{
+    appearance: none;
+    border: 1px solid rgba(16, 20, 24, 0.16);
+    background: #f7f9fb;
+    color: #40505f;
+    min-height: 40px;
+    padding: 0 14px;
+    border-radius: 999px;
+    font: inherit;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.18s ease, color 0.18s ease, transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.mesa__combat-tab:hover,
+.mesa__combat-tab:focus-visible
+{
+    background: #e8edf3;
+    color: #101418;
+    transform: translateY(-1px);
+    outline: none;
+}
+
+.mesa__combat-tab--active
+{
+    background: #101418;
+    color: #ffffff;
+    border-color: #101418;
+    box-shadow: 0 8px 18px rgba(16, 20, 24, 0.16);
+}
+
+.mesa__combat-panel
+{
+    display: grid;
+    gap: 12px;
+}
+
+.mesa__combat-panel[hidden]
+{
+    display: none !important;
+}
+
+.mesa__combat-description-label
+{
+    margin: 0;
+    font-size: 14px;
+    font-weight: 700;
+    color: #101418;
+}
+
 .mesa__vertical-separator
 {
-    grid-area: separator;
-    width: 1px;
-    height: 100%;
-    min-height: 220px;
-    background: rgba(16, 20, 24, 0.16);
-    justify-self: center;
+    display: none;
 }
 
 .mesa__vertical-separator[hidden]
@@ -1862,12 +2357,13 @@ body:has(#inicio.panel--active)
     min-height: 120px;
     border-radius: 12px;
     border: 1px solid rgba(16, 20, 24, 0.18);
-    background: #e9eef4;
+    background: linear-gradient(180deg, #e7f7e6 0%, #d8efda 100%);
     padding: 14px;
     display: grid;
     align-content: start;
     gap: 12px;
     box-sizing: border-box;
+    justify-self: end;
 }
 
 .mesa__damage-card[hidden]
@@ -1885,55 +2381,69 @@ body:has(#inicio.panel--active)
 
 .mesa__damage-section
 {
-    margin-top: -4px;
+    margin-top: 0;
 }
 
-.mesa__damage-section + .mesa__damage-title
+.mesa__damage-separator
 {
-    margin-top: 16px;
+    width: 100%;
+    height: 1px;
+    margin: 2px 0 0;
+    background: rgba(16, 20, 24, 0.14);
 }
 
-.mesa__damage-input-row
+.mesa__damage-main-row
 {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-columns: minmax(0, 1fr) 44px 44px;
+    gap: 12px;
+    align-items: center;
+}
+
+.mesa__damage-toggle-row
+{
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+    justify-content: flex-start;
+    margin-left: 0;
+    flex: 0 0 auto;
+    width: 100%;
+}
+
+.mesa__damage-toggle-row--type,
+.mesa__damage-toggle-row--heal
+{
+    margin-bottom: 10px;
+}
+
+.mesa__damage-toggle-row--type
+{
+    max-width: 100%;
+}
+
+.mesa__damage-toggle-row--heal
+{
+    max-width: 100%;
+}
+
+.mesa__effect-control-row
+{
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
     gap: 8px;
     align-items: center;
 }
 
-.mesa__damage-input-row--heal
+.mesa__effect-picker
 {
-    grid-template-columns: minmax(0, 1fr) auto auto auto auto;
-    gap: 10px;
-    align-items: center;
-}
-
-.mesa__damage-input-row--type
-{
-    grid-template-columns: minmax(0, 1fr) auto auto auto auto;
-    gap: 10px;
-    align-items: center;
-}
-
-.mesa__damage-input-row--effect
-{
-    grid-template-columns: minmax(0, 1fr) auto 44px;
-    gap: 10px;
-    align-items: stretch;
+    min-width: 0;
 }
 
 .mesa__effect-picker select
 {
     width: 100%;
-    min-height: 44px;
-    border-radius: 12px;
-    border: 1px solid rgba(16, 20, 24, 0.2);
-    background: #ffffff;
-    color: #101418;
-    font: inherit;
-    font-weight: 600;
-    padding: 0 12px;
-    box-sizing: border-box;
 }
 
 .mesa__effect-separator
@@ -1941,36 +2451,189 @@ body:has(#inicio.panel--active)
     width: 1px;
     min-height: 44px;
     background: rgba(16, 20, 24, 0.2);
-    display: inline-block;
     align-self: stretch;
 }
 
 .mesa__effect-add
 {
-    width: 44px;
-    height: 44px;
+    width: 40px;
+    min-height: 40px;
+    border: 0;
     border-radius: 12px;
-    border: 1px solid rgba(16, 20, 24, 0.4);
-    background: #d8e1ea;
-    color: #101418;
+    background: #101418;
+    color: #ffffff;
     font: inherit;
-    font-size: 26px;
-    font-weight: 700;
+    font-size: 22px;
+    font-weight: 800;
     line-height: 1;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
     cursor: pointer;
-    transition: background 0.18s ease, transform 0.18s ease, border-color 0.18s ease;
+    transition: background 0.18s ease, transform 0.18s ease;
 }
 
 .mesa__effect-add:hover,
 .mesa__effect-add:focus-visible
 {
-    background: #c8d3de;
+    background: #2b3138;
     transform: translateY(-1px);
-    border-color: rgba(16, 20, 24, 0.55);
     outline: none;
+}
+
+.mesa__toggle-chip,
+.mesa__effect-count-lock,
+.mesa__heal-toggle,
+.mesa__damage-type-toggle
+{
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 34px;
+    padding: 0 10px;
+    border-radius: 12px;
+    border: 1px solid rgba(16, 20, 24, 0.2);
+    background: #ffffff;
+    color: #101418;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+}
+
+.mesa__heal-toggle,
+.mesa__damage-type-toggle
+{
+    flex: 0 0 auto;
+}
+
+.mesa__toggle-chip input,
+.mesa__effect-count-lock input,
+.mesa__heal-toggle input,
+.mesa__damage-type-toggle input
+{
+    appearance: none;
+    margin: 0;
+    width: 18px;
+    height: 18px;
+    border-radius: 5px;
+    border: 1px solid rgba(16, 20, 24, 0.25);
+    background-color: #ffffff;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: 0 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background-size 0.18s ease, transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.mesa__toggle-chip input:checked,
+.mesa__effect-count-lock input:checked,
+.mesa__heal-toggle input:checked,
+.mesa__damage-type-toggle input:checked
+{
+    background-color: #ffffff;
+    background-image: url('res/checkbox.png');
+    background-size: 12px 12px;
+}
+
+.mesa__toggle-chip input:hover,
+.mesa__toggle-chip input:focus-visible,
+.mesa__effect-count-lock input:hover,
+.mesa__effect-count-lock input:focus-visible,
+.mesa__heal-toggle input:hover,
+.mesa__heal-toggle input:focus-visible,
+.mesa__damage-type-toggle input:hover,
+.mesa__damage-type-toggle input:focus-visible
+{
+    transform: translateY(-1px);
+    border-color: rgba(16, 20, 24, 0.38);
+    box-shadow: inset 0 0 0 1px rgba(16, 20, 24, 0.08);
+    outline: none;
+}
+
+.mesa__toggle-chip input:checked:hover,
+.mesa__toggle-chip input:checked:focus-visible,
+.mesa__effect-count-lock input:checked:hover,
+.mesa__effect-count-lock input:checked:focus-visible,
+.mesa__heal-toggle input:checked:hover,
+.mesa__heal-toggle input:checked:focus-visible,
+.mesa__damage-type-toggle input:checked:hover,
+.mesa__damage-type-toggle input:checked:focus-visible
+{
+    border-color: rgba(16, 20, 24, 0.38);
+    box-shadow: inset 0 0 0 1px rgba(16, 20, 24, 0.08);
+}
+
+.mesa__damage-type-toggle input:disabled
+{
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+.mesa__damage-type-toggle input:disabled + span
+{
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+.mesa__damage-main-row .mesa__damage-attack
+{
+    justify-self: end;
+}
+
+.mesa__damage-attack--stagger
+{
+    background: linear-gradient(180deg, #dfeadf 0%, #c9e0cb 100%);
+    color: #17351c;
+}
+
+.mesa__damage-attack--stagger:hover,
+.mesa__damage-attack--stagger:focus-visible
+{
+    background: linear-gradient(180deg, #d5e8d5 0%, #bbdcbc 100%);
+}
+
+.mesa__damage-section--type,
+.mesa__damage-section--heal
+{
+    display: grid;
+    gap: 10px;
+}
+
+.mesa__damage-section--heal
+{
+    justify-items: end;
+}
+
+.mesa__damage-section--heal .mesa__damage-main-row
+{
+    width: min(100%, 300px);
+    justify-self: end;
+    grid-template-columns: minmax(0, 1fr) 44px;
+}
+
+.mesa__damage-section--type .mesa__damage-main-row input,
+.mesa__damage-section--heal .mesa__damage-main-row input
+{
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    -moz-appearance: textfield;
+}
+
+.mesa__damage-section--type .mesa__damage-main-row input::-webkit-outer-spin-button,
+.mesa__damage-section--type .mesa__damage-main-row input::-webkit-inner-spin-button,
+.mesa__damage-section--heal .mesa__damage-main-row input::-webkit-outer-spin-button,
+.mesa__damage-section--heal .mesa__damage-main-row input::-webkit-inner-spin-button
+{
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.mesa__damage-main-row
+{
+    gap: 10px;
 }
 
 .mesa__effect-list
@@ -1999,7 +2662,7 @@ body:has(#inicio.panel--active)
 .mesa__effect-card
 {
     display: grid;
-    gap: 10px;
+    gap: 14px;
     padding: 12px 14px;
     border-radius: 14px;
     border: 1px solid rgba(16, 20, 24, 0.2);
@@ -2007,6 +2670,11 @@ body:has(#inicio.panel--active)
     box-shadow: 0 6px 18px rgba(16, 20, 24, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.7);
     transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
     cursor: grab;
+}
+
+.mesa__effect-card:has(.mesa__effect-remove--inline)
+{
+    gap: 14px;
 }
 
 .mesa__effect-card:hover,
@@ -2037,17 +2705,22 @@ body:has(#inicio.panel--active)
 {
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 112px 40px;
-    gap: 10px;
     align-items: end;
 }
 
 .mesa__effect-controls--power-only
 {
+    grid-template-columns: minmax(0, 1fr);
+}
+.mesa__effect-controls--modifier
+{
     grid-template-columns: minmax(0, 1fr) auto;
+    column-gap: 12px;
 }
 .mesa__effect-controls--counted
 {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+    column-gap: 12px;
 }
 .mesa__effect-actions
 {
@@ -2061,25 +2734,19 @@ body:has(#inicio.panel--active)
 }
 .mesa__effect-actions--modifier
 {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 112px 40px;
-    gap: 8px;
+    display: flex;
     align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
 }
 .mesa__effect-actions--modifier .mesa__effect-modifier-toggle
 {
-    justify-self: start;
-}
-.mesa__effect-actions--modifier .mesa__effect-apply,
-.mesa__effect-actions--modifier .mesa__effect-remove
-{
-    justify-self: end;
+    margin-left: auto;
 }
 
 .mesa__effect-controls--power-only .mesa__effect-actions
 {
-    width: auto;
-    justify-self: end;
+    display: none;
 }
 .mesa__effect-actions > *
 {
@@ -2090,13 +2757,122 @@ body:has(#inicio.panel--active)
     min-height: 40px;
     border: 0;
     border-radius: 12px;
-    background: #101418;
+    background: #2f7d4a;
     color: #ffffff;
     font: inherit;
     font-weight: 700;
     cursor: pointer;
     transition: background 0.18s ease, transform 0.18s ease;
     flex: 0 0 auto;
+}
+
+.mesa__effect-apply--primary
+{
+    background: #2f7d4a;
+    white-space: nowrap;
+    min-width: 0;
+    width: auto;
+    padding: 0 12px;
+    justify-self: start;
+}
+
+.mesa__effect-power-inline-row
+{
+    display: grid;
+    grid-template-columns: minmax(0, 1.35fr) auto minmax(120px, 0.65fr) auto;
+    gap: 4px 8px;
+    align-items: end;
+    grid-column: 1 / -1;
+}
+
+.mesa__effect-power-inline
+{
+    min-width: 0;
+    width: 100%;
+}
+
+.mesa__effect-potency-inline
+{
+    display: grid;
+    gap: 6px;
+    min-width: 0;
+}
+
+.mesa__effect-potency-inline .mesa__effect-field-label
+{
+    margin: 0;
+    white-space: nowrap;
+}
+
+.mesa__effect-power-inline-row .mesa__effect-apply--primary
+{
+    align-self: end;
+}
+
+.mesa__effect-power-adjustment-inline
+{
+    display: grid;
+    gap: 6px;
+    align-self: end;
+}
+
+.mesa__effect-power-adjustment-inline .mesa__effect-field-label
+{
+    margin: 0;
+    white-space: nowrap;
+}
+
+.mesa__effect-input--compact
+{
+    width: 100%;
+}
+
+.mesa__effect-power-stepper
+{
+    display: grid;
+    grid-template-columns: repeat(2, 40px);
+    gap: 4px;
+    align-self: end;
+    justify-self: end;
+}
+
+.mesa__effect-adjustment--power
+{
+    align-self: stretch;
+}
+
+.mesa__effect-adjustment-row--power
+{
+    grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.mesa__effect-input--power-adjustment
+{
+    width: 100%;
+}
+
+.mesa__effect-step-btn
+{
+    width: 40px;
+    min-height: 40px;
+    border: 0;
+    border-radius: 10px;
+    background: #2f6ea5;
+    color: #ffffff;
+    font: inherit;
+    font-size: 18px;
+    font-weight: 800;
+    line-height: 1;
+    cursor: pointer;
+    transition: background 0.18s ease, transform 0.18s ease;
+}
+
+.mesa__effect-step-btn:hover,
+.mesa__effect-step-btn:focus-visible
+{
+    background: #255b8a;
+    transform: translateY(-1px);
+    outline: none;
 }
 
 .mesa__effect-adjustments
@@ -2114,18 +2890,26 @@ body:has(#inicio.panel--active)
 
 .mesa__effect-adjustments--with-count
 {
-    grid-template-columns: minmax(0, 1fr) 1px minmax(0, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     column-gap: 10px;
 }
 
 .mesa__effect-adjustments--with-count .mesa__effect-adjustment:first-child
 {
-    grid-column: 1;
+    grid-column: auto;
 }
 
 .mesa__effect-adjustments--with-count .mesa__effect-adjustment:last-child
 {
-    grid-column: 3;
+    grid-column: auto;
+}
+
+.mesa__effect-adjustment--compact
+{
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px;
+    align-items: end;
 }
 
 .mesa__effect-adjustment-separator
@@ -2164,6 +2948,79 @@ body:has(#inicio.panel--active)
     display: grid;
     gap: 6px;
     min-width: 0;
+}
+
+.mesa__effect-description-value
+{
+    margin-top: 12px;
+}
+
+.mesa__effect-count-field
+{
+    gap: 8px;
+}
+
+.mesa__effect-count-header
+{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    min-width: 0;
+}
+
+.mesa__effect-count-lock
+{
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: #40505f;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+}
+
+.mesa__effect-count-lock input
+{
+    appearance: none;
+    margin: 0;
+    width: 18px;
+    height: 18px;
+    border-radius: 5px;
+    border: 1px solid rgba(16, 20, 24, 0.28);
+    background: #ffffff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background-color 0.18s ease, border-color 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.mesa__effect-count-lock input:checked
+{
+    background-color: #ffffff;
+    background-image: url('res/checkbox.png');
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: 12px 12px;
+}
+
+.mesa__effect-count-lock input:hover,
+.mesa__effect-count-lock input:focus-visible
+{
+    transform: translateY(-1px);
+    border-color: rgba(16, 20, 24, 0.42);
+    box-shadow: inset 0 0 0 1px rgba(16, 20, 24, 0.08);
+    outline: none;
+}
+
+.mesa__effect-count-lock input:checked:hover,
+.mesa__effect-count-lock input:checked:focus-visible
+{
+    border-color: rgba(16, 20, 24, 0.42);
+    box-shadow: inset 0 0 0 1px rgba(16, 20, 24, 0.08);
 }
 
 .mesa__effect-field-label
@@ -2218,6 +3075,16 @@ body:has(#inicio.panel--active)
     min-width: 0;
 }
 
+.mesa__effect-card-header
+{
+    cursor: grab;
+}
+
+.mesa__effect-card-header:active
+{
+    cursor: grabbing;
+}
+
 .mesa__effect-card-title
 {
     margin: 0;
@@ -2232,6 +3099,8 @@ body:has(#inicio.panel--active)
     color: #40505f;
     font-size: 13px;
     font-weight: 600;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
 }
 
 .mesa__effect-card-detail strong
@@ -2244,7 +3113,7 @@ body:has(#inicio.panel--active)
     min-height: 40px;
     border: 0;
     border-radius: 12px;
-    background: #101418;
+    background: #2f7d4a;
     color: #ffffff;
     font: inherit;
     font-weight: 700;
@@ -2263,7 +3132,7 @@ body:has(#inicio.panel--active)
 .mesa__effect-apply:hover,
 .mesa__effect-apply:focus-visible
 {
-    background: #24303a;
+    background: #27683e;
     transform: translateY(-1px);
     outline: none;
 }
@@ -2278,24 +3147,31 @@ body:has(#inicio.panel--active)
 
 .mesa__effect-remove
 {
-    width: 40px;
-    min-height: 40px;
+    width: 38px;
+    min-height: 38px;
     border: 0;
-    border-radius: 12px;
-    background: #d7a6a6;
-    color: #101418;
+    border-radius: 10px;
+    background: #c94f4f;
+    color: #ffffff;
     font: inherit;
-    font-size: 22px;
-    font-weight: 700;
+    font-size: 20px;
+    font-weight: 800;
     line-height: 1;
     cursor: pointer;
     transition: background 0.18s ease, transform 0.18s ease;
 }
 
+.mesa__effect-remove--inline
+{
+    margin-left: auto;
+    align-self: flex-start;
+    flex: 0 0 auto;
+}
+
 .mesa__effect-remove:hover,
 .mesa__effect-remove:focus-visible
 {
-    background: #c98f8f;
+    background: #ad3f3f;
     transform: translateY(-1px);
     outline: none;
 }
@@ -2304,7 +3180,15 @@ body:has(#inicio.panel--active)
     display: inline-flex;
     align-items: center;
     justify-content: flex-end;
-    gap: 8px;
+    gap: 6px;
+    min-width: 0;
+}
+
+.mesa__effect-actions--description
+{
+    display: flex;
+    justify-content: flex-end;
+    align-items: flex-start;
     min-width: 0;
 }
 .mesa__effect-modifier-toggle
@@ -2368,8 +3252,8 @@ body:has(#inicio.panel--active)
     min-height: 40px;
     border: 0;
     border-radius: 12px;
-    background: #b9d9bf;
-    color: #101418;
+    background: #2f6ea5;
+    color: #ffffff;
     font: inherit;
     font-size: 22px;
     font-weight: 800;
@@ -2381,79 +3265,49 @@ body:has(#inicio.panel--active)
 .mesa__effect-increase:hover,
 .mesa__effect-increase:focus-visible
 {
-    background: #a6cbb0;
+    background: #255b8a;
     transform: translateY(-1px);
     outline: none;
 }
 
 .mesa__heal-toggles
 {
-    display: inline-flex;
+    display: flex;
     align-items: center;
-    gap: 12px;
-    white-space: nowrap;
+    gap: 10px;
+    flex-wrap: wrap;
 }
 
 .mesa__heal-toggle
 {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    color: #101418;
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
-    user-select: none;
+    gap: 6px;
 }
 
 .mesa__damage-type-toggles
 {
-    display: inline-flex;
-    flex-direction: row;
+    display: flex;
     flex-wrap: wrap;
-    gap: 12px;
-    white-space: nowrap;
+    gap: 10px;
     max-width: 100%;
 }
 
 .mesa__damage-type-toggle
 {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    color: #101418;
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
-    user-select: none;
+    gap: 6px;
 }
 
 .mesa__heal-toggle input,
 .mesa__damage-type-toggle input
 {
-    appearance: none;
-    margin: 0;
-    width: 44px;
-    height: 44px;
-    border-radius: 12px;
-    border: 1px solid rgba(16, 20, 24, 0.2);
-    background-color: #ffffff;
-    background-position: center;
-    background-repeat: no-repeat;
-    background-size: 0 0;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: background-size 0.18s ease, transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+    width: 18px;
+    height: 18px;
+    border-radius: 5px;
 }
 
 .mesa__heal-toggle input:checked,
 .mesa__damage-type-toggle input:checked
 {
-    background-color: #ffffff;
-    background-image: url('res/checkbox.png');
-    background-size: 20px 20px;
+    background-size: 12px 12px;
 }
 
 .mesa__heal-toggle input:hover,
@@ -2703,6 +3557,28 @@ body:has(#inicio.panel--active)
         grid-template-columns: 1fr;
     }
 
+    .creator__actions--effect-name
+    {
+        align-items: stretch;
+        flex-wrap: wrap;
+    }
+
+    .effects__name-field
+    {
+        flex: 1 1 100%;
+    }
+
+    .effects__property-selector
+    {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .effects__property-option
+    {
+        flex: 1;
+    }
+
     #effects-modifier-values-row
     {
         grid-template-columns: 1fr;
@@ -2710,18 +3586,25 @@ body:has(#inicio.panel--active)
 
     .mesa__content-wrapper
     {
-        grid-template-columns: minmax(0, 1fr) 1px minmax(160px, 200px);
+        grid-template-columns: 1fr;
         grid-template-areas:
-            "left separator right"
-            "damage damage damage";
+            "left"
+            "damage"
+            "combat";
+        gap: 12px;
+    }
+
+    .mesa__status-body
+    {
+        grid-template-columns: minmax(160px, 200px) minmax(0, 1fr);
         gap: 12px;
     }
 
     .mesa__resistances-row
     {
         grid-template-columns: 1fr;
-    }
-
+        flex-wrap: nowrap;
+        white-space: nowrap;
     .mesa__status-metrics-row
     {
         grid-template-columns: 1fr;
@@ -2736,6 +3619,16 @@ body:has(#inicio.panel--active)
     .mesa__right-content
     {
         width: 100%;
+    }
+
+    .mesa__damage-card
+    {
+        justify-self: stretch;
+    }
+
+    .mesa__combat-card
+    {
+        gap: 12px;
     }
 
     .mesa__right-content
@@ -2766,8 +3659,19 @@ body:has(#inicio.panel--active)
         grid-template-columns: 1fr;
         grid-template-areas:
             "left"
-            "right"
-            "damage";
+            "damage"
+            "combat";
+    }
+
+    .mesa__status-body
+    {
+        grid-template-columns: 1fr;
+    }
+
+    .mesa__status-text
+    {
+        flex-wrap: wrap;
+        white-space: normal;
     }
 
     .mesa__vertical-separator
@@ -2779,6 +3683,11 @@ body:has(#inicio.panel--active)
     .mesa__right-content
     {
         max-width: none;
+    }
+
+    .mesa__status-text
+    {
+        gap: 6px;
     }
 
     .mesa__heal-toggles

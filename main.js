@@ -1,6 +1,10 @@
 const tabs = Array.from(document.querySelectorAll('.navbar__tab'));
+const navbarDropdowns = Array.from(document.querySelectorAll('.navbar__dropdown'));
 const panels = Array.from(document.querySelectorAll('.panel'));
 const navbarHome = document.getElementById('navbar-home');
+const exportDataHomeButton = document.getElementById('export-data-home');
+const importDataHomeButton = document.getElementById('import-data-home');
+const importDataInput = document.getElementById('import-data-input');
 const clearLocalStorageHomeButton = document.getElementById('clear-localstorage-home');
 
 const nameInput = document.getElementById('char-name');
@@ -15,14 +19,20 @@ const keywordInput = document.getElementById('keyword-new');
 const keywordAddButton = document.getElementById('keyword-add');
 const keywordRegistryList = document.getElementById('keyword-registry-list');
 const effectsNameInput = document.getElementById('effects-name');
-const effectsDescriptionInput = document.getElementById('effects-description');
 const effectsTargetSelect = document.getElementById('effects-target');
+const effectsTargetAddButton = document.getElementById('effects-target-add');
+const effectsTargetList = document.getElementById('effects-target-list');
+const effectsDescriptionInput = document.getElementById('effects-description');
+const effectsDescriptionValueField = document.getElementById('effects-description-value-field');
+const effectsDescriptionValueInput = document.getElementById('effects-description-value');
 const effectsHowField = document.getElementById('effects-how-field');
 const effectsHowSelect = document.getElementById('effects-how');
 const effectsPropertiesSelect = document.getElementById('effects-properties');
+const effectsPropertiesModeInputs = Array.from(document.querySelectorAll('input[name="effects-properties-mode"]'));
 const effectsBehaviorInputs = Array.from(document.querySelectorAll('input[name="effects-behavior"]'));
 const effectsModifierHowField = document.getElementById('effects-modifier-how-field');
 const effectsModifierHowSelect = document.getElementById('effects-modifier-how');
+const effectsPreserveCountCheckbox = document.getElementById('effects-preserve-count');
 const effectsModifierPropertiesField = document.getElementById('effects-modifier-properties-field');
 const effectsModifierPropertiesSelect = document.getElementById('effects-modifier-properties');
 const effectsStandardFields = document.getElementById('effects-standard-fields');
@@ -63,11 +73,13 @@ const characterDetails = document.getElementById('character-details');
 const viewerContainer = document.querySelector('.viewer');
 const mesaTab = document.querySelector('.navbar__tab[data-target="mesa"]');
 const mesaCharacterSelect = document.getElementById('mesa-character');
+const mesaSelectContainer = document.querySelector('.mesa__select-container');
+const mesaInstanceBar = document.getElementById('mesa-instance-bar');
 const mesaLoadCharacterButton = document.getElementById('mesa-load-character');
 const mesaStatus = document.getElementById('mesa-status');
 const mesaInfo = document.getElementById('mesa-info');
-const mesaCharacterImage = document.getElementById('mesa-character-image');
-const mesaImagePlaceholder = document.getElementById('mesa-image-placeholder');
+let mesaCharacterImage = document.getElementById('mesa-character-image');
+let mesaImagePlaceholder = document.getElementById('mesa-image-placeholder');
 const mesaContentWrapper = document.getElementById('mesa-content-wrapper');
 const mesaRightContent = document.getElementById('mesa-right-content');
 const mesaVerticalSeparator = document.getElementById('mesa-vertical-separator');
@@ -76,9 +88,9 @@ const mesaDamageInput = document.getElementById('mesa-damage');
 const mesaDamageSlashToggle = document.getElementById('mesa-damage-slash-toggle');
 const mesaDamagePierceToggle = document.getElementById('mesa-damage-pierce-toggle');
 const mesaDamageBluntToggle = document.getElementById('mesa-damage-blunt-toggle');
-const mesaDamageStaggerToggle = document.getElementById('mesa-damage-stagger-toggle');
-const mesaCharacterStaggerOverlay = document.getElementById('mesa-character-stagger-overlay');
+let mesaCharacterStaggerOverlay = document.getElementById('mesa-character-stagger-overlay');
 const mesaAttackButton = document.getElementById('mesa-attack-button');
+const mesaStaggerAttackButton = document.getElementById('mesa-stagger-attack-button');
 const mesaHealInput = document.getElementById('mesa-heal');
 const mesaHealButton = document.getElementById('mesa-heal-button');
 const mesaHealLifeToggle = document.getElementById('mesa-heal-life-toggle');
@@ -86,6 +98,11 @@ const mesaHealStaggerToggle = document.getElementById('mesa-heal-stagger-toggle'
 const mesaEffectSelect = document.getElementById('mesa-effect-select');
 const mesaEffectAddButton = document.getElementById('mesa-effect-add-button');
 const mesaEffectsList = document.getElementById('mesa-effects-list');
+const mesaCombatEffectsTab = document.getElementById('mesa-combat-effects-tab');
+const mesaCombatDescriptionsTab = document.getElementById('mesa-combat-descriptions-tab');
+const mesaCombatEffectsPanel = document.getElementById('mesa-combat-effects-panel');
+const mesaCombatDescriptionsPanel = document.getElementById('mesa-combat-descriptions-panel');
+const mesaCommentsInput = document.getElementById('mesa-comments');
 const captionModal = document.getElementById('caption-modal');
 const captionTitle = document.getElementById('caption-title');
 const captionMessage = document.getElementById('caption-message');
@@ -128,6 +145,7 @@ const LOCAL_STORAGE_KEY = 'critique.characters';
 const KEYWORDS_STORAGE_KEY = 'critique.keywords';
 const EFFECTS_STORAGE_KEY = 'critique.effects';
 const MESA_STATE_KEY = 'critique.mesaState';
+const MESA_INSTANCES_KEY = 'critique.mesaInstances';
 const NO_CHARACTERS_MESSAGE = 'Sem Personagens Criados';
 const RESISTANCE_LABELS = {
 	'2.0': 'Vulnerável',
@@ -167,6 +185,8 @@ let editCharacterBaseImage = '';
 let characters = [];
 let activeCharacterIndex = 0;
 let lastLoadedMesaCharacter = '';
+let mesaOpenCharacterNames = [];
+let mesaActiveCharacterName = '';
 const mesaInitialStatsByCharacter = {};
 const mesaEffectAdjustmentInputs = {};
 let draggedMesaEffectInstanceId = '';
@@ -183,9 +203,14 @@ let imagePreviewDragStartY = 0;
 const mesaDamageTypeControls = [
 	{ key: 'slash', input: mesaDamageSlashToggle },
 	{ key: 'pierce', input: mesaDamagePierceToggle },
-	{ key: 'blunt', input: mesaDamageBluntToggle },
-	{ key: 'stagger', input: mesaDamageStaggerToggle }
+	{ key: 'blunt', input: mesaDamageBluntToggle }
 ];
+
+function closeNavbarDropdowns() {
+	navbarDropdowns.forEach((dropdown) => {
+		dropdown.classList.remove('navbar__dropdown--open');
+	});
+}
 
 function readFileAsDataURL(imageFile) {
 	return new Promise((resolve, reject) => {
@@ -234,6 +259,10 @@ function normalizeEffectTarget(value) {
 		return 'ca';
 	}
 
+	if (normalizedValue === 'movement' || normalizedValue === 'deslocamento' || normalizedValue === 'movimento') {
+		return 'movement';
+	}
+
 	if (normalizedValue === 'none' || normalizedValue === 'nada') {
 		return 'none';
 	}
@@ -251,13 +280,29 @@ function normalizeEffectProperties(value) {
 		return 'power-and-count';
 	}
 
+	if (normalizedValue === 'description' || normalizedValue === 'descricao') {
+		return 'description';
+	}
+
 	return 'power';
 }
 
 function normalizeEffectBehavior(value) {
 	const normalizedValue = String(value ?? '').trim().toLowerCase();
-	if (normalizedValue === 'modifier' || normalizedValue === 'modificador' || normalizedValue === 'effect-activation') {
+	if (
+		normalizedValue === 'modifier'
+		|| normalizedValue === 'modificador'
+		|| normalizedValue === 'effect-activation'
+	) {
 		return 'modifier';
+	}
+
+	if (
+		normalizedValue === 'amplifier'
+		|| normalizedValue === 'amplificador'
+		|| normalizedValue === 'effect-amplifier'
+	) {
+		return 'amplifier';
 	}
 
 	return 'standard';
@@ -267,6 +312,10 @@ function normalizeEffectHow(value) {
 	const normalizedValue = String(value ?? '').trim().toLowerCase();
 	if (normalizedValue === 'increase' || normalizedValue === 'aumenta' || normalizedValue === 'up') {
 		return 'increase';
+	}
+
+	if (normalizedValue === 'reducao' || normalizedValue === 'redução' || normalizedValue === 'reduction') {
+		return 'reducao';
 	}
 
 	return 'reduce';
@@ -364,6 +413,10 @@ function createMesaEffectInstance(effectId) {
 	}
 
 	const behavior = normalizeEffectBehavior(template.behavior);
+	const properties = behavior === 'modifier' || behavior === 'amplifier'
+		? 'power'
+		: normalizeEffectProperties(template.properties);
+	const valueEnabled = properties === 'description' && Boolean(template.valueEnabled);
 
 	return {
 		instanceId: `${template.id}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`,
@@ -373,12 +426,15 @@ function createMesaEffectInstance(effectId) {
 		behavior,
 		target: behavior === 'modifier' ? 'life' : template.target,
 		how: normalizeEffectHow(template.how),
-		properties: behavior === 'modifier' ? 'power-and-count' : normalizeEffectProperties(template.properties),
-		activation: normalizeEffectActivation(template.activation),
+		properties,
+		valueEnabled,
+		value: '',
+		activation: behavior === 'modifier' ? 'modifier' : normalizeEffectActivation(template.activation),
 		modifierDefinition: normalizeEffectModifierDefinition(template.modifierDefinition),
 		active: false,
+		preserveCount: Boolean(template.preserveCount ?? false),
 		power: DEFAULT_MESA_EFFECT_POWER,
-		count: DEFAULT_MESA_EFFECT_COUNT
+		count: properties === 'power-and-count' ? DEFAULT_MESA_EFFECT_COUNT : 0
 	};
 }
 
@@ -395,13 +451,16 @@ function normalizeMesaEffect(effect, index = 0) {
 
 	const power = parseNonNegativeInt(effect.power ?? effect.potency ?? DEFAULT_MESA_EFFECT_POWER) || DEFAULT_MESA_EFFECT_POWER;
 	const behavior = normalizeEffectBehavior(effect.behavior ?? effect.comportamento ?? template.behavior);
-	const properties = behavior === 'modifier'
-		? 'power-and-count'
+	const properties = behavior === 'modifier' || behavior === 'amplifier'
+		? 'power'
 		: normalizeEffectProperties(effect.properties ?? template.properties);
 	const count = properties === 'power-and-count'
 		? normalizeNonNegativeIntOrDefault(effect.count ?? effect.counts ?? effect.uses ?? DEFAULT_MESA_EFFECT_COUNT, DEFAULT_MESA_EFFECT_COUNT)
 		: DEFAULT_MESA_EFFECT_COUNT;
 	const normalizedTarget = normalizeEffectTarget(effect.target ?? template.target);
+	const valueEnabled = properties === 'description'
+		? Boolean(effect.valueEnabled ?? effect.hasValue ?? effect.valor ?? template.valueEnabled ?? false)
+		: false;
 
 	return {
 		instanceId: String(effect.instanceId ?? effect.instance ?? effect.key ?? `${template.id}-${index}-${power}`),
@@ -412,9 +471,12 @@ function normalizeMesaEffect(effect, index = 0) {
 		target: behavior === 'modifier' ? 'life' : normalizedTarget,
 		how: normalizeEffectHow(effect.how ?? effect.como ?? template.how),
 		properties,
-		activation: normalizeEffectActivation(effect.activation ?? template.activation),
+		valueEnabled,
+		value: properties === 'description' ? String(effect.value ?? effect.valor ?? effect.text ?? '').trim() : '',
+		activation: behavior === 'modifier' ? 'modifier' : normalizeEffectActivation(effect.activation ?? template.activation),
 		modifierDefinition: normalizeEffectModifierDefinition(effect.modifierDefinition ?? template.modifierDefinition),
 		active: Boolean(effect.active ?? effect.ativo ?? false),
+		preserveCount: Boolean(effect.preserveCount ?? effect.keepCount ?? effect.lockCount ?? effect.contagemFixa ?? false),
 		power,
 		count
 	};
@@ -473,6 +535,10 @@ function getDefaultMesaSpeedFieldValue(character) {
 
 function getDefaultMesaCaFieldValue(character) {
 	return String(character?.ca ?? '').trim();
+}
+
+function getDefaultMesaMovementFieldValue(character) {
+	return String(character?.deslocamento ?? '').trim();
 }
 
 function parseEditableStatValue(value, fallbackValue) {
@@ -544,13 +610,15 @@ function renderMesaEffectOptions() {
 
 	const selectedValue = normalizeMesaEffectId(mesaEffectSelect.value);
 	mesaEffectSelect.innerHTML = '';
+	const placeholderOption = document.createElement('option');
+	placeholderOption.value = '';
+	placeholderOption.textContent = 'Selecione um efeito';
+	placeholderOption.disabled = true;
+	placeholderOption.hidden = true;
+	mesaEffectSelect.appendChild(placeholderOption);
 
 	if (!effectsRegistry.length) {
-		const emptyOption = document.createElement('option');
-		emptyOption.value = '';
-		emptyOption.textContent = 'Nenhum Efeito Cadastrado';
-		emptyOption.selected = true;
-		mesaEffectSelect.appendChild(emptyOption);
+		placeholderOption.selected = true;
 		mesaEffectSelect.disabled = true;
 		if (mesaEffectAddButton) {
 			mesaEffectAddButton.disabled = true;
@@ -569,13 +637,7 @@ function renderMesaEffectOptions() {
 	if (mesaEffectAddButton) {
 		mesaEffectAddButton.disabled = false;
 	}
-
-	const hasCurrentSelection = effectsRegistry.some((effect) => effect.id === selectedValue);
-	const randomIndex = Math.floor(Math.random() * effectsRegistry.length);
-	const nextValue = hasCurrentSelection
-		? selectedValue
-		: effectsRegistry[randomIndex].id;
-	mesaEffectSelect.value = nextValue;
+	mesaEffectSelect.value = effectsRegistry.some((effect) => effect.id === selectedValue) ? selectedValue : '';
 }
 
 function getResistanceControlValue(control) {
@@ -722,6 +784,7 @@ function removeSelectedEditImage() {
 
 function updateMesaAvailability() {
 	const hasCharacters = characters.length > 0;
+	syncMesaInstancesWithCharacters(characters);
 
 	if (mesaTab) {
 		mesaTab.disabled = !hasCharacters;
@@ -729,22 +792,26 @@ function updateMesaAvailability() {
 		mesaTab.classList.toggle('navbar__tab--disabled', !hasCharacters);
 	}
 
-	if (hasCharacters) {
-		return;
-	}
+	if (!hasCharacters) {
+		mesaOpenCharacterNames = [];
+		mesaActiveCharacterName = '';
+		lastLoadedMesaCharacter = '';
+		lastSelectedMesaCharacter = '';
+		writeMesaInstancesState({
+			openCharacterNames: [],
+			activeCharacterName: ''
+		});
+		clearMesaStatus();
 
-	lastLoadedMesaCharacter = '';
-	lastSelectedMesaCharacter = '';
-	clearMesaStatus();
+		if (mesaCharacterSelect) {
+			mesaCharacterSelect.value = '';
+			mesaCharacterSelect.disabled = true;
+		}
 
-	if (mesaCharacterSelect) {
-		mesaCharacterSelect.value = '';
-		mesaCharacterSelect.disabled = true;
-	}
-
-	const mesaIsActive = panels.some((panel) => panel.id === 'mesa' && panel.classList.contains('panel--active'));
-	if (mesaIsActive) {
-		setActivePanel('inicio');
+		const mesaIsActive = panels.some((panel) => panel.id === 'mesa' && panel.classList.contains('panel--active'));
+		if (mesaIsActive) {
+			setActivePanel('inicio');
+		}
 	}
 }
 
@@ -758,6 +825,8 @@ function setActivePanel(targetId) {
 		tab.classList.toggle('navbar__tab--active', isActive);
 		tab.setAttribute('aria-selected', String(isActive));
 	});
+
+	closeNavbarDropdowns();
 
 	panels.forEach((panel) => {
 		const isActive = panel.id === targetId;
@@ -1108,9 +1177,11 @@ function readStoredEffects() {
 
 				const behavior = normalizeEffectBehavior(effect.behavior ?? effect.comportamento);
 				const normalizedTarget = normalizeEffectTarget(effect.target);
-				const properties = behavior === 'modifier'
-					? 'power-and-count'
-					: normalizeEffectProperties(effect.properties ?? effect.type ?? effect.tipo);
+				const storedProperties = effect.properties ?? effect.type ?? effect.tipo;
+				const properties = behavior === 'modifier' || behavior === 'amplifier'
+					? 'power'
+					: (storedProperties == null ? 'power-and-count' : normalizeEffectProperties(storedProperties));
+				const valueEnabled = Boolean(effect.valueEnabled ?? effect.hasValue ?? effect.valor ?? false);
 
 				return {
 					id,
@@ -1121,6 +1192,7 @@ function readStoredEffects() {
 					target: behavior === 'modifier' ? 'life' : normalizedTarget,
 					how: normalizeEffectHow(effect.how ?? effect.como),
 					properties,
+					valueEnabled: properties === 'description' ? valueEnabled : false,
 					activation: normalizeEffectActivation(effect.activation ?? effect.ativacao),
 					modifierDefinition: normalizeEffectModifierDefinition(effect.modifierDefinition ?? effect.modifier_definition ?? effect.definicaoModificador)
 				};
@@ -1139,6 +1211,80 @@ function writeStoredEffects(nextEffects) {
 	}
 
 	localStorage.setItem(EFFECTS_STORAGE_KEY, JSON.stringify(nextEffects));
+}
+
+function createExportPayload() {
+	return {
+		version: 1,
+		exportedAt: new Date().toISOString(),
+		characters: readStoredCharacters(),
+		keywords: readStoredKeywords(),
+		effects: readStoredEffects()
+	};
+}
+
+function downloadJsonFile(fileName, data) {
+	const blob = new Blob([data], { type: 'application/json;charset=utf-8' });
+	const objectUrl = URL.createObjectURL(blob);
+	const link = document.createElement('a');
+	link.href = objectUrl;
+	link.download = fileName;
+	document.body.appendChild(link);
+	link.click();
+	link.remove();
+	URL.revokeObjectURL(objectUrl);
+}
+
+async function exportAppData() {
+	const payload = createExportPayload();
+	const fileName = `critique-export-${new Date().toISOString().slice(0, 10)}.json`;
+	downloadJsonFile(fileName, JSON.stringify(payload, null, 2));
+}
+
+async function importAppDataFromFile(file) {
+	if (!file) {
+		return;
+	}
+
+	let importedData;
+	try {
+		importedData = JSON.parse(await file.text());
+	} catch {
+		await showCaptionInfo('Importacao invalida', 'O arquivo selecionado nao e um JSON valido.');
+		return;
+	}
+
+	if (!importedData || typeof importedData !== 'object' || Array.isArray(importedData)) {
+		await showCaptionInfo('Importacao invalida', 'O arquivo selecionado nao possui a estrutura esperada.');
+		return;
+	}
+
+	const nextCharacters = Array.isArray(importedData.characters) ? importedData.characters : Array.isArray(importedData.personagens) ? importedData.personagens : null;
+	const nextEffects = Array.isArray(importedData.effects) ? importedData.effects : Array.isArray(importedData.efeitos) ? importedData.efeitos : null;
+	const nextKeywords = Array.isArray(importedData.keywords) ? importedData.keywords : Array.isArray(importedData.palavrasChave) ? importedData.palavrasChave : [];
+
+	if (!nextCharacters || !nextEffects) {
+		await showCaptionInfo('Importacao invalida', 'O arquivo precisa conter personagens e efeitos exportados pela aplicacao.');
+		return;
+	}
+
+	const confirmedImport = await showCaptionWindow({
+		title: 'Confirmar Importacao',
+		message: 'Isso vai substituir os personagens, efeitos e palavras chave atuais. Continuar?',
+		confirmText: 'Importar',
+		cancelText: 'Cancelar',
+		showCancel: true
+	});
+
+	if (!confirmedImport) {
+		return;
+	}
+
+	writeStoredCharacters(nextCharacters);
+	writeStoredKeywords(nextKeywords);
+	writeStoredEffects(nextEffects);
+	localStorage.removeItem(MESA_STATE_KEY);
+	window.location.reload();
 }
 
 function clearEffectPreviewObjectUrl() {
@@ -1199,53 +1345,60 @@ function resetEffectsForm() {
 	if (effectsNameInput) {
 		effectsNameInput.value = '';
 	}
-	if (effectsDescriptionInput) {
-		effectsDescriptionInput.value = '';
-	}
-	if (effectsTargetSelect) {
-		effectsTargetSelect.value = DEFAULT_EFFECT_TARGET;
-	}
 	if (effectsHowSelect) {
-		effectsHowSelect.value = 'reduce';
-	}
-	if (effectsPropertiesSelect) {
-		effectsPropertiesSelect.value = 'power-and-count';
+		effectsHowSelect.value = 'increase';
 	}
 	if (effectsModifierHowSelect) {
 		effectsModifierHowSelect.value = 'reduce';
 	}
-	setSelectedModifierProperties('power-and-count');
-	if (effectsBehaviorInputs.length) {
-		effectsBehaviorInputs.forEach((input) => {
-			input.checked = input.value === 'standard';
-		});
+
+	if (effectsPreserveCountCheckbox) {
+		effectsPreserveCountCheckbox.checked = false;
 	}
-	if (effectsActivationSelect) {
-		effectsActivationSelect.value = 'manual';
-	}
-	if (effectsModifierDefinitionSelect) {
-		effectsModifierDefinitionSelect.value = 'attack';
-	}
+
+	// initialize fields
+	setSelectedEffectTargets([]);
+	setSelectedEffectPropertiesMode('power');
 	editingEffectId = '';
+	selectedEffectImageFile = null;
 	editEffectBaseImage = '';
+	clearEffectPreviewObjectUrl();
 	if (effectsImageInput) {
 		effectsImageInput.value = '';
 	}
 	if (effectsAddButton) {
 		effectsAddButton.textContent = 'Salvar Efeito';
 	}
-	selectedEffectImageFile = null;
-	updateEffectsImageButtonLabel();
-	updateEffectsImagePreview();
+	// clear description
+	if (effectsDescriptionInput) {
+		effectsDescriptionInput.value = '';
+	}
+	if (effectsDescriptionValueInput) {
+		effectsDescriptionValueInput.checked = false;
+	}
 	updateEffectsBehaviorState();
-	updateEffectsModifierDefinitionVisibility();
 	updateEffectsHowVisibility();
-	updateEffectsModifierHowVisibility();
+	updateEffectsImagePreview();
+}
+
+function getSelectedEffectPropertiesMode() {
+	const selectedInput = effectsPropertiesModeInputs.find((input) => input.checked);
+	return normalizeEffectProperties(selectedInput?.value ?? 'power');
+}
+
+function setSelectedEffectPropertiesMode(value) {
+	const rawValue = String(value ?? '').trim().toLowerCase();
+	const normalizedValue = rawValue === 'modifier' || rawValue === 'amplifier'
+		? rawValue
+		: normalizeEffectProperties(rawValue);
+	effectsPropertiesModeInputs.forEach((input) => {
+		input.checked = input.value === normalizedValue;
+	});
 }
 
 function getSelectedEffectBehavior() {
-	const selectedInput = effectsBehaviorInputs.find((input) => input.checked);
-	return normalizeEffectBehavior(selectedInput?.value);
+	const selectedInput = effectsPropertiesModeInputs.find((input) => input.checked);
+	return normalizeEffectBehavior(selectedInput?.value ?? 'power');
 }
 
 function getSelectedModifierHow() {
@@ -1266,6 +1419,7 @@ function setSelectedModifierProperties(value) {
 function updateEffectsBehaviorState() {
 	const behavior = getSelectedEffectBehavior();
 	const shouldDisableStandardFields = behavior === 'modifier';
+	const isDescriptionMode = getSelectedEffectPropertiesMode() === 'description';
 	if (effectsModifierHowField) {
 		effectsModifierHowField.hidden = !shouldDisableStandardFields;
 	}
@@ -1273,7 +1427,13 @@ function updateEffectsBehaviorState() {
 		effectsModifierPropertiesField.hidden = !shouldDisableStandardFields;
 	}
 	if (effectsStandardFields) {
-		effectsStandardFields.hidden = shouldDisableStandardFields;
+		effectsStandardFields.hidden = shouldDisableStandardFields || isDescriptionMode;
+	}
+	if (effectsDescriptionValueField) {
+		effectsDescriptionValueField.hidden = !isDescriptionMode || shouldDisableStandardFields;
+	}
+	if (!isDescriptionMode && effectsDescriptionValueInput) {
+		effectsDescriptionValueInput.checked = false;
 	}
 
 	if (effectsHowSelect) {
@@ -1300,6 +1460,109 @@ function updateEffectsBehaviorState() {
 	}
 }
 
+/* Targets (Afeta) helpers - select + add button with removable tags */
+function getSelectedEffectTargets() {
+	if (!effectsTargetList) {
+		return [DEFAULT_EFFECT_TARGET];
+	}
+
+	return Array.from(effectsTargetList.querySelectorAll('[data-value]')).map((el) => String(el.dataset.value));
+}
+
+function setSelectedEffectTargets(values) {
+	if (!effectsTargetList) {
+		return;
+	}
+
+	effectsTargetList.innerHTML = '';
+	const wanted = Array.from(values || []).map((v) => String(v));
+	wanted.forEach((val) => {
+		const opt = Array.from(effectsTargetSelect?.options || []).find((o) => String(o.value) === String(val));
+		const label = opt ? opt.textContent : String(val);
+		addTargetTag(val, label);
+	});
+}
+
+function getSelectedEffectTargetNormalized() {
+	const selected = getSelectedEffectTargets();
+	const hasLife = selected.includes('life');
+	const hasStagger = selected.includes('stagger');
+	const hasSpeed = selected.includes('speed');
+	const hasCa = selected.includes('ca');
+	const hasMovement = selected.includes('movement');
+
+	if (hasLife && hasStagger) return 'life-and-stagger';
+	if (hasLife) return 'life';
+	if (hasStagger) return 'stagger';
+	if (hasSpeed) return 'speed';
+	if (hasCa) return 'ca';
+	if (hasMovement) return 'movement';
+
+	return DEFAULT_EFFECT_TARGET;
+}
+
+
+function addTargetTag(value, label) {
+	if (!effectsTargetList) return;
+	const existing = effectsTargetList.querySelector(`[data-value="${CSS.escape(String(value))}"]`);
+	if (existing) return;
+
+	const chip = document.createElement('span');
+	chip.className = 'creator__keyword-chip';
+	chip.setAttribute('data-value', String(value));
+	chip.textContent = label;
+
+	const removeButton = document.createElement('button');
+	removeButton.type = 'button';
+	removeButton.className = 'creator__keyword-remove';
+	removeButton.setAttribute('aria-label', `Remover ${label}`);
+	removeButton.textContent = '×';
+	removeButton.addEventListener('click', () => {
+		chip.remove();
+	});
+
+	chip.appendChild(removeButton);
+	effectsTargetList.appendChild(chip);
+}
+
+function getAllowedEffectTargetsForBehavior(behavior) {
+	return normalizeEffectBehavior(behavior) === 'amplifier'
+		? new Set(['life', 'stagger'])
+		: null;
+}
+
+function updateEffectsTargetAvailability() {
+	if (!effectsTargetSelect) {
+		return;
+	}
+
+	const behavior = getSelectedEffectBehavior();
+	const allowedTargets = getAllowedEffectTargetsForBehavior(behavior);
+	const availableTargets = Array.from(effectsTargetSelect.options)
+		.filter((option) => !allowedTargets || allowedTargets.has(option.value))
+		.map((option) => option.value);
+
+	Array.from(effectsTargetSelect.options).forEach((option) => {
+		const isAllowed = !allowedTargets || allowedTargets.has(option.value);
+		option.hidden = !isAllowed;
+		option.disabled = !isAllowed;
+	});
+
+	if (!allowedTargets) {
+		return;
+	}
+
+	const selectedTargets = getSelectedEffectTargets();
+	const filteredTargets = selectedTargets.filter((value) => allowedTargets.has(value));
+	if (filteredTargets.length !== selectedTargets.length) {
+		setSelectedEffectTargets(filteredTargets.length ? filteredTargets : ['life']);
+	}
+
+	if (!availableTargets.includes(effectsTargetSelect.value)) {
+		effectsTargetSelect.value = filteredTargets[0] || 'life';
+	}
+}
+
 function updateEffectsModifierDefinitionVisibility() {
 	if (!effectsModifierDefinitionField || !effectsActivationSelect) {
 		return;
@@ -1311,6 +1574,12 @@ function updateEffectsModifierDefinitionVisibility() {
 
 function updateEffectsHowVisibility() {
 	if (!effectsHowField || !effectsTargetSelect || !effectsHowSelect) {
+		return;
+	}
+
+	if (getSelectedEffectPropertiesMode() === 'description') {
+		effectsHowField.hidden = true;
+		effectsHowSelect.value = 'reduce';
 		return;
 	}
 
@@ -1332,7 +1601,7 @@ function updateEffectsModifierHowVisibility() {
 
 function beginEditEffect(effectId) {
 	const normalizedId = normalizeMesaEffectId(effectId);
-	if (!normalizedId || !effectsNameInput || !effectsTargetSelect) {
+	if (!normalizedId || !effectsNameInput) {
 		return;
 	}
 
@@ -1346,30 +1615,39 @@ function beginEditEffect(effectId) {
 	selectedEffectImageFile = null;
 
 	effectsNameInput.value = existingEffect.name;
-	if (effectsDescriptionInput) {
-		effectsDescriptionInput.value = String(existingEffect.description ?? '');
-	}
-	effectsTargetSelect.value = normalizeEffectTarget(existingEffect.target);
 	if (effectsHowSelect) {
 		effectsHowSelect.value = normalizeEffectHow(existingEffect.how);
 	}
 	if (effectsModifierHowSelect) {
-		effectsModifierHowSelect.value = normalizeEffectHow(existingEffect.how);
+		effectsModifierHowSelect.value = normalizeEffectBehavior(existingEffect.behavior) === 'modifier'
+			? normalizeEffectHow(existingEffect.how)
+			: 'reduce';
 	}
-	if (effectsPropertiesSelect) {
-		effectsPropertiesSelect.value = normalizeEffectProperties(existingEffect.properties);
+	setSelectedEffectPropertiesMode(existingEffect.behavior === 'modifier' ? 'modifier' : existingEffect.properties);
+
+	// populate Afeta (targets) - support new `targets` array or legacy `target` string
+	if (Array.isArray(existingEffect.targets) && existingEffect.targets.length) {
+		setSelectedEffectTargets(existingEffect.targets);
+	} else if (existingEffect.target) {
+		if (existingEffect.target === 'life-and-stagger') {
+			setSelectedEffectTargets(['life', 'stagger']);
+		} else if (existingEffect.target === 'none') {
+			setSelectedEffectTargets([]);
+		} else {
+			setSelectedEffectTargets([existingEffect.target]);
+		}
+	} else {
+		// no targets present for this effect; leave empty so the list is hidden
+		setSelectedEffectTargets([]);
 	}
-	setSelectedModifierProperties(existingEffect.properties);
-	if (effectsBehaviorInputs.length) {
-		effectsBehaviorInputs.forEach((input) => {
-			input.checked = input.value === normalizeEffectBehavior(existingEffect.behavior);
-		});
+	if (effectsDescriptionInput) {
+		effectsDescriptionInput.value = existingEffect.description || '';
 	}
-	if (effectsActivationSelect) {
-		effectsActivationSelect.value = normalizeEffectActivation(existingEffect.activation);
+	if (effectsDescriptionValueInput) {
+		effectsDescriptionValueInput.checked = Boolean(existingEffect.valueEnabled);
 	}
-	if (effectsModifierDefinitionSelect) {
-		effectsModifierDefinitionSelect.value = normalizeEffectModifierDefinition(existingEffect.modifierDefinition);
+	if (effectsPreserveCountCheckbox) {
+		effectsPreserveCountCheckbox.checked = Boolean(existingEffect.preserveCount);
 	}
 	if (effectsImageInput) {
 		effectsImageInput.value = '';
@@ -1381,9 +1659,7 @@ function beginEditEffect(effectId) {
 	updateEffectsImageButtonLabel();
 	updateEffectsImagePreview();
 	updateEffectsBehaviorState();
-	updateEffectsModifierDefinitionVisibility();
 	updateEffectsHowVisibility();
-	updateEffectsModifierHowVisibility();
 	setEffectsFormOpen(true);
 }
 
@@ -1453,7 +1729,21 @@ function renderEffectsRegistry() {
 
 		const description = document.createElement('p');
 		description.className = 'effects__item-target';
-		description.textContent = String(effect.description ?? '').trim() || 'Sem descrição.';
+		const behaviorNorm = normalizeEffectBehavior(effect.behavior);
+		let effectModeLabel = '';
+		if (behaviorNorm === 'reducao') {
+			effectModeLabel = 'Redução';
+		} else if (behaviorNorm === 'modifier') {
+			const how = normalizeEffectHow(effect.how);
+			effectModeLabel = how === 'increase' ? 'Aumentar Dano' : how === 'reducao' ? 'Redução' : 'Reduzir Dano';
+		} else if (effect.properties === 'description') {
+			effectModeLabel = effect.valueEnabled ? 'Description + Stack' : 'Description';
+		} else if (effect.properties === 'power-and-count') {
+			effectModeLabel = 'Potency & Count';
+		} else {
+			effectModeLabel = 'Potency';
+		}
+		description.textContent = `${effectModeLabel} - ${String(effect.description ?? '').trim() || 'Sem descrição.'}`;
 
 		const actions = document.createElement('div');
 		actions.className = 'effects__item-actions';
@@ -1507,12 +1797,11 @@ function syncMesaEffectsWithRegistry() {
 }
 
 async function addEffect() {
-	if (!effectsNameInput || !effectsTargetSelect) {
+	if (!effectsNameInput) {
 		return;
 	}
 
 	const effectName = normalizeEffectName(effectsNameInput.value);
-	const effectDescription = String(effectsDescriptionInput?.value ?? '').trim();
 	if (!effectName) {
 		await showCaptionInfo('Atencao', 'Digite o nome do efeito.');
 		return;
@@ -1524,17 +1813,18 @@ async function addEffect() {
 	}
 
 	const behavior = getSelectedEffectBehavior();
-	const target = behavior === 'modifier'
-		? 'life'
-		: normalizeEffectTarget(effectsTargetSelect.value);
+	const selectedTargets = behavior === 'modifier' ? ['life'] : getSelectedEffectTargets();
+	const target = behavior === 'modifier' ? 'life' : getSelectedEffectTargetNormalized();
+	const description = effectsDescriptionInput?.value?.trim() || '';
+	const valueEnabled = Boolean(effectsDescriptionValueInput?.checked);
 	const how = behavior === 'modifier'
 		? getSelectedModifierHow()
-		: normalizeEffectHow(effectsHowSelect?.value);
+		: normalizeEffectHow(effectsHowSelect?.value ?? 'increase');
 	const properties = behavior === 'modifier'
-		? 'power-and-count'
-		: normalizeEffectProperties(effectsPropertiesSelect?.value);
-	const activation = normalizeEffectActivation(effectsActivationSelect?.value);
-	const modifierDefinition = normalizeEffectModifierDefinition(effectsModifierDefinitionSelect?.value);
+		? 'power'
+		: getSelectedEffectPropertiesMode();
+	const activation = behavior === 'modifier' ? 'modifier' : 'manual';
+	const modifierDefinition = 'attack';
 	const hasDuplicateName = effectsRegistry.some((effect) => {
 		if (effect.id === editingEffectId) {
 			return false;
@@ -1567,14 +1857,17 @@ async function addEffect() {
 	const nextEffect = {
 		id: isEditing ? editingEffectId : createEffectId(effectName),
 		name: effectName,
-		description: effectDescription,
+		description,
 		icon: imageData,
 		behavior,
 		target,
+		targets: selectedTargets,
 		how,
 		properties,
+		valueEnabled: properties === 'description' ? valueEnabled : false,
 		activation,
-		modifierDefinition
+		modifierDefinition,
+		preserveCount: Boolean(effectsPreserveCountCheckbox?.checked),
 	};
 
 	if (isEditing) {
@@ -1588,7 +1881,6 @@ async function addEffect() {
 	renderEffectsRegistry();
 	renderMesaEffectOptions();
 	setEffectsFormOpen(false);
-	await showCaptionInfo('Sucesso', isEditing ? 'Efeito atualizado com sucesso.' : 'Efeito cadastrado com sucesso.');
 }
 
 async function deleteEffect(effectId) {
@@ -1618,7 +1910,6 @@ async function deleteEffect(effectId) {
 	renderEffectsRegistry();
 	renderMesaEffectOptions();
 	renderMesaStatus();
-	await showCaptionInfo('Sucesso', 'Efeito removido com sucesso.');
 }
 
 function normalizeKeywordValue(value) {
@@ -1894,7 +2185,11 @@ function getMesaStateEntry(character, mesaState) {
 			stagger: maxStagger,
 			effects: [],
 			speedValue: getDefaultMesaSpeedFieldValue(character),
-			caValue: getDefaultMesaCaFieldValue(character)
+			caValue: getDefaultMesaCaFieldValue(character),
+			movementValue: getDefaultMesaMovementFieldValue(character),
+			comments: '',
+			combatTab: 'effects',
+			staggerDamageActive: false
 		};
 	}
 
@@ -1905,7 +2200,11 @@ function getMesaStateEntry(character, mesaState) {
 			stagger: maxStagger,
 			effects: [],
 			speedValue: getDefaultMesaSpeedFieldValue(character),
-			caValue: getDefaultMesaCaFieldValue(character)
+			caValue: getDefaultMesaCaFieldValue(character),
+			movementValue: getDefaultMesaMovementFieldValue(character),
+			comments: '',
+			combatTab: 'effects',
+			staggerDamageActive: false
 		};
 	}
 
@@ -1915,7 +2214,11 @@ function getMesaStateEntry(character, mesaState) {
 			stagger: maxStagger,
 			effects: [],
 			speedValue: getDefaultMesaSpeedFieldValue(character),
-			caValue: getDefaultMesaCaFieldValue(character)
+			caValue: getDefaultMesaCaFieldValue(character),
+			movementValue: getDefaultMesaMovementFieldValue(character),
+			comments: '',
+			combatTab: 'effects',
+			staggerDamageActive: false
 		};
 	}
 
@@ -1928,11 +2231,15 @@ function getMesaStateEntry(character, mesaState) {
 		stagger: Math.min(parseNonNegativeInt(rawEntry.stagger), maxStagger),
 		effects,
 		speedValue: typeof rawEntry.speedValue === 'string' ? rawEntry.speedValue : getDefaultMesaSpeedFieldValue(character),
-		caValue: typeof rawEntry.caValue === 'string' ? rawEntry.caValue : getDefaultMesaCaFieldValue(character)
+		caValue: typeof rawEntry.caValue === 'string' ? rawEntry.caValue : getDefaultMesaCaFieldValue(character),
+		movementValue: typeof rawEntry.movementValue === 'string' ? rawEntry.movementValue : getDefaultMesaMovementFieldValue(character),
+		comments: String(rawEntry.comments ?? rawEntry.observacoes ?? rawEntry.comment ?? '').trim(),
+		combatTab: rawEntry.combatTab === 'descriptions' ? 'descriptions' : 'effects',
+		staggerDamageActive: Boolean(rawEntry.staggerDamageActive ?? rawEntry.staggerActive ?? false)
 	};
 }
 
-function setMesaStateEntry(character, mesaState, nextLife, nextStagger, nextEffects, nextSpeedValue, nextCaValue) {
+function setMesaStateEntry(character, mesaState, nextLife, nextStagger, nextEffects, nextSpeedValue, nextCaValue, nextMovementValue, nextStaggerDamageActive, nextComments, nextCombatTab) {
 	const maxLife = getCharacterMaxLife(character);
 	const maxStagger = getCharacterMaxStagger(character);
 	const key = getCharacterKey(character.nome);
@@ -1948,8 +2255,21 @@ function setMesaStateEntry(character, mesaState, nextLife, nextStagger, nextEffe
 	const caValue = nextCaValue === undefined
 		? currentEntry.caValue
 		: String(nextCaValue ?? '').trim();
+	const movementValue = nextMovementValue === undefined
+		? currentEntry.movementValue
+		: String(nextMovementValue ?? '').trim();
+	const staggerDamageActive = nextStaggerDamageActive === undefined
+		? Boolean(currentEntry.staggerDamageActive)
+		: Boolean(nextStaggerDamageActive);
+	const comments = nextComments === undefined
+		? currentEntry.comments
+		: String(nextComments ?? '').trim();
+	const combatTab = nextCombatTab === undefined
+		? currentEntry.combatTab
+		: (nextCombatTab === 'descriptions' ? 'descriptions' : 'effects');
 	const defaultSpeedValue = getDefaultMesaSpeedFieldValue(character);
 	const defaultCaValue = getDefaultMesaCaFieldValue(character);
+	const defaultMovementValue = getDefaultMesaMovementFieldValue(character);
 
 	if (
 		clampedLife === maxLife
@@ -1957,6 +2277,10 @@ function setMesaStateEntry(character, mesaState, nextLife, nextStagger, nextEffe
 		&& !effects.length
 		&& speedValue === defaultSpeedValue
 		&& caValue === defaultCaValue
+		&& movementValue === defaultMovementValue
+		&& !comments
+		&& combatTab === 'effects'
+		&& !staggerDamageActive
 	) {
 		delete mesaState[key];
 		return;
@@ -1967,7 +2291,11 @@ function setMesaStateEntry(character, mesaState, nextLife, nextStagger, nextEffe
 		stagger: clampedStagger,
 		effects,
 		speedValue,
-		caValue
+		caValue,
+		movementValue,
+		comments,
+		combatTab,
+		staggerDamageActive
 	};
 }
 
@@ -2001,6 +2329,161 @@ function writeMesaState(nextState) {
 	localStorage.setItem(MESA_STATE_KEY, JSON.stringify(nextState));
 }
 
+function readMesaInstancesState() {
+	const emptyState = { openCharacterNames: [], activeCharacterName: '' };
+
+	try {
+		const storedState = localStorage.getItem(MESA_INSTANCES_KEY);
+		if (!storedState) {
+			return emptyState;
+		}
+
+		const parsedState = JSON.parse(storedState);
+		if (!parsedState || typeof parsedState !== 'object' || Array.isArray(parsedState)) {
+			localStorage.removeItem(MESA_INSTANCES_KEY);
+			return emptyState;
+		}
+
+		const openCharacterNames = Array.isArray(parsedState.openCharacterNames)
+			? parsedState.openCharacterNames.map((name) => String(name ?? '').trim()).filter(Boolean)
+			: [];
+		const activeCharacterName = String(parsedState.activeCharacterName ?? '').trim();
+
+		return {
+			openCharacterNames: Array.from(new Set(openCharacterNames)),
+			activeCharacterName
+		};
+	} catch {
+		localStorage.removeItem(MESA_INSTANCES_KEY);
+		return emptyState;
+	}
+}
+
+function writeMesaInstancesState(nextState) {
+	const openCharacterNames = Array.isArray(nextState?.openCharacterNames)
+		? Array.from(new Set(nextState.openCharacterNames.map((name) => String(name ?? '').trim()).filter(Boolean)))
+		: [];
+	const activeCharacterName = String(nextState?.activeCharacterName ?? '').trim();
+
+	if (!openCharacterNames.length && !activeCharacterName) {
+		localStorage.removeItem(MESA_INSTANCES_KEY);
+		return;
+	}
+
+	localStorage.setItem(MESA_INSTANCES_KEY, JSON.stringify({
+		openCharacterNames,
+		activeCharacterName
+	}));
+}
+
+function syncMesaInstancesWithCharacters(characterList) {
+	const validCharacterNames = new Set(characterList.map((character) => character.nome));
+	const nextOpenCharacterNames = mesaOpenCharacterNames.filter((name) => validCharacterNames.has(name));
+	let nextActiveCharacterName = mesaActiveCharacterName;
+
+	if (nextActiveCharacterName && !validCharacterNames.has(nextActiveCharacterName)) {
+		nextActiveCharacterName = nextOpenCharacterNames[0] || '';
+	}
+
+	mesaOpenCharacterNames = nextOpenCharacterNames;
+	mesaActiveCharacterName = nextActiveCharacterName;
+	writeMesaInstancesState({
+		openCharacterNames: mesaOpenCharacterNames,
+		activeCharacterName: mesaActiveCharacterName
+	});
+}
+
+function setMesaActiveCharacter(characterName, openIfNeeded = true) {
+	const normalizedName = String(characterName ?? '').trim();
+	if (!normalizedName) {
+		mesaActiveCharacterName = '';
+		lastLoadedMesaCharacter = '';
+		if (mesaCharacterSelect) {
+			mesaCharacterSelect.value = lastSelectedMesaCharacter && characters.some((character) => character.nome === lastSelectedMesaCharacter)
+				? lastSelectedMesaCharacter
+				: '';
+		}
+		writeMesaInstancesState({
+			openCharacterNames: mesaOpenCharacterNames,
+			activeCharacterName: ''
+		});
+		return;
+	}
+
+	if (openIfNeeded && !mesaOpenCharacterNames.includes(normalizedName)) {
+		mesaOpenCharacterNames = [...mesaOpenCharacterNames, normalizedName];
+	}
+
+	mesaActiveCharacterName = normalizedName;
+	lastLoadedMesaCharacter = normalizedName;
+	if (mesaCharacterSelect) {
+		mesaCharacterSelect.value = normalizedName;
+	}
+	writeMesaInstancesState({
+		openCharacterNames: mesaOpenCharacterNames,
+		activeCharacterName: mesaActiveCharacterName
+	});
+}
+
+function closeMesaCharacterInstance(characterName) {
+	const normalizedName = String(characterName ?? '').trim();
+	if (!normalizedName) {
+		return;
+	}
+
+	const wasActive = mesaActiveCharacterName === normalizedName;
+	mesaOpenCharacterNames = mesaOpenCharacterNames.filter((name) => name !== normalizedName);
+
+	if (!mesaOpenCharacterNames.length) {
+		setMesaActiveCharacter('');
+		clearMesaStatus();
+		renderMesaInstanceBar();
+		return;
+	}
+
+	if (wasActive) {
+		const nextActiveCharacterName = mesaOpenCharacterNames[0];
+		setMesaActiveCharacter(nextActiveCharacterName, false);
+		renderMesaPanel();
+		renderMesaStatus();
+		return;
+	}
+
+	writeMesaInstancesState({
+		openCharacterNames: mesaOpenCharacterNames,
+		activeCharacterName: mesaActiveCharacterName
+	});
+	renderMesaInstanceBar();
+}
+
+function renderMesaInstanceBar() {
+	if (!mesaInstanceBar) {
+		return;
+	}
+
+	mesaInstanceBar.innerHTML = '';
+	const hasOpenInstances = mesaOpenCharacterNames.length > 0;
+	mesaInstanceBar.hidden = !hasOpenInstances;
+	if (!hasOpenInstances) {
+		return;
+	}
+
+	const fragment = document.createDocumentFragment();
+	mesaOpenCharacterNames.forEach((characterName) => {
+		const chip = document.createElement('button');
+		chip.type = 'button';
+		chip.className = 'mesa__instance-chip';
+		if (characterName === mesaActiveCharacterName) {
+			chip.classList.add('mesa__instance-chip--active');
+		}
+		chip.dataset.characterName = characterName;
+		chip.textContent = characterName;
+		fragment.appendChild(chip);
+	});
+
+	mesaInstanceBar.appendChild(fragment);
+}
+
 function syncMesaStateWithCharacters(characterList) {
 	const mesaState = readMesaState();
 	const validCharacterKeys = new Set(characterList.map((character) => getCharacterKey(character.nome)));
@@ -2026,8 +2509,9 @@ function syncMesaStateWithCharacters(characterList) {
 		const hasEffectsApplied = normalizedEntry.effects.length > 0;
 		const hasSpeedOverride = normalizedEntry.speedValue !== getDefaultMesaSpeedFieldValue(character);
 		const hasCaOverride = normalizedEntry.caValue !== getDefaultMesaCaFieldValue(character);
+		const hasMovementOverride = normalizedEntry.movementValue !== getDefaultMesaMovementFieldValue(character);
 
-		if (!hasDamageApplied && !hasEffectsApplied && !hasSpeedOverride && !hasCaOverride) {
+		if (!hasDamageApplied && !hasEffectsApplied && !hasSpeedOverride && !hasCaOverride && !hasMovementOverride) {
 			delete mesaState[key];
 			hasChanges = true;
 			return;
@@ -2041,7 +2525,8 @@ function syncMesaStateWithCharacters(characterList) {
 			|| parseNonNegativeInt(existingEntry.stagger) !== normalizedEntry.stagger
 			|| JSON.stringify(existingEntry.effects ?? []) !== JSON.stringify(normalizedEntry.effects)
 			|| String(existingEntry.speedValue ?? '') !== normalizedEntry.speedValue
-			|| String(existingEntry.caValue ?? '') !== normalizedEntry.caValue;
+			|| String(existingEntry.caValue ?? '') !== normalizedEntry.caValue
+			|| String(existingEntry.movementValue ?? '') !== normalizedEntry.movementValue;
 
 		if (needsRewrite) {
 			mesaState[key] = {
@@ -2049,7 +2534,8 @@ function syncMesaStateWithCharacters(characterList) {
 				stagger: normalizedEntry.stagger,
 				effects: normalizedEntry.effects,
 				speedValue: normalizedEntry.speedValue,
-				caValue: normalizedEntry.caValue
+				caValue: normalizedEntry.caValue,
+				movementValue: normalizedEntry.movementValue
 			};
 			hasChanges = true;
 		}
@@ -2061,11 +2547,15 @@ function syncMesaStateWithCharacters(characterList) {
 }
 
 function getSelectedMesaCharacter() {
-	if (!mesaCharacterSelect || !characters.length) {
+	if (!characters.length) {
 		return null;
 	}
 
-	const selectedName = mesaCharacterSelect.value;
+	const selectedName = String(mesaActiveCharacterName || lastLoadedMesaCharacter || '').trim();
+	if (!selectedName) {
+		return null;
+	}
+
 	return characters.find((character) => character.nome === selectedName) || null;
 }
 
@@ -2075,6 +2565,83 @@ function getMesaCurrentLife(character, mesaState) {
 
 function getMesaCurrentStagger(character, mesaState) {
 	return getMesaStateEntry(character, mesaState).stagger;
+}
+
+function normalizeMesaCombatTab(value) {
+	return String(value ?? '').trim().toLowerCase() === 'descriptions' ? 'descriptions' : 'effects';
+}
+
+function updateMesaCombatTabUI(combatTab) {
+	const normalizedTab = normalizeMesaCombatTab(combatTab);
+	if (mesaCombatEffectsTab) {
+		mesaCombatEffectsTab.classList.toggle('mesa__combat-tab--active', normalizedTab === 'effects');
+		mesaCombatEffectsTab.setAttribute('aria-selected', String(normalizedTab === 'effects'));
+	}
+	if (mesaCombatDescriptionsTab) {
+		mesaCombatDescriptionsTab.classList.toggle('mesa__combat-tab--active', normalizedTab === 'descriptions');
+		mesaCombatDescriptionsTab.setAttribute('aria-selected', String(normalizedTab === 'descriptions'));
+	}
+	if (mesaCombatEffectsPanel) {
+		mesaCombatEffectsPanel.hidden = normalizedTab !== 'effects';
+	}
+	if (mesaCombatDescriptionsPanel) {
+		mesaCombatDescriptionsPanel.hidden = normalizedTab !== 'descriptions';
+	}
+}
+
+function getMesaDamageStaggerState(character = getSelectedMesaCharacter()) {
+	if (!character) {
+		return false;
+	}
+
+	const mesaState = readMesaState();
+	return Boolean(getMesaStateEntry(character, mesaState).staggerDamageActive);
+}
+
+function setMesaDamageStaggerState(character, isActive) {
+	if (!character) {
+		return;
+	}
+
+	const mesaState = readMesaState();
+	const currentEntry = getMesaStateEntry(character, mesaState);
+	setMesaStateEntry(
+		character,
+		mesaState,
+		currentEntry.life,
+		currentEntry.stagger,
+		currentEntry.effects,
+		currentEntry.speedValue,
+		currentEntry.caValue,
+		currentEntry.movementValue,
+		isActive
+	);
+	writeMesaState(mesaState);
+	renderMesaStatus();
+}
+
+function setMesaCombatTab(character, combatTab) {
+	if (!character) {
+		return;
+	}
+
+	const mesaState = readMesaState();
+	const currentEntry = getMesaStateEntry(character, mesaState);
+	setMesaStateEntry(
+		character,
+		mesaState,
+		currentEntry.life,
+		currentEntry.stagger,
+		currentEntry.effects,
+		currentEntry.speedValue,
+		currentEntry.caValue,
+		currentEntry.movementValue,
+		currentEntry.staggerDamageActive,
+		currentEntry.comments,
+		combatTab
+	);
+	writeMesaState(mesaState);
+	renderMesaStatus();
 }
 
 function setMesaDamageTypeSelection(activeType) {
@@ -2109,8 +2676,15 @@ function updateMesaDamagePreviewOverlay() {
 		return;
 	}
 
-	const shouldShowOverlay = getMesaDamageTypeSelection() === 'stagger' && !mesaCharacterImage.hidden;
+	const selectedCharacter = getSelectedMesaCharacter();
+	const shouldShowOverlay = Boolean(selectedCharacter && !mesaCharacterImage.hidden && getMesaDamageStaggerState(selectedCharacter));
 	mesaCharacterStaggerOverlay.hidden = !shouldShowOverlay;
+
+	mesaDamageTypeControls.forEach(({ input }) => {
+		if (input) {
+			input.disabled = shouldShowOverlay;
+		}
+	});
 }
 
 function renderMesaEffects(selectedCharacter, mesaState) {
@@ -2130,6 +2704,7 @@ function renderMesaEffects(selectedCharacter, mesaState) {
 	}
 
 	effects.forEach((effect) => {
+		const isDescriptionEffect = effect.properties === 'description';
 		const isPowerOnlyEffect = effect.properties === 'power';
 		const isBehaviorModifier = normalizeEffectBehavior(effect.behavior) === 'modifier';
 		const isModifierEffect = effect.activation === 'modifier' || isBehaviorModifier;
@@ -2144,72 +2719,129 @@ function renderMesaEffects(selectedCharacter, mesaState) {
 		const effectDescription = String(effect.description ?? getEffectTemplate(effect.id)?.description ?? '').trim() || 'Sem descrição.';
 		const effectCard = document.createElement('article');
 		effectCard.className = `mesa__effect-card mesa__effect-card--${effect.id}`;
-		effectCard.draggable = true;
+		effectCard.draggable = false;
 		effectCard.dataset.mesaEffectInstance = effect.instanceId;
-		effectCard.innerHTML = `
-			<div class="mesa__effect-card-header">
-				<img class="mesa__effect-icon" src="${effect.icon}" alt="" aria-hidden="true">
-				<div class="mesa__effect-card-title-group">
-					<h3 class="mesa__effect-card-title">${effect.name}</h3>
-					<p class="mesa__effect-card-detail">${effectDescription}</p>
+		if (isBehaviorModifier) {
+			effectCard.innerHTML = `
+				<div class="mesa__effect-card-header">
+					<img class="mesa__effect-icon" src="${effect.icon}" alt="" aria-hidden="true">
+					<div class="mesa__effect-card-title-group mesa__effect-drag-handle" draggable="true">
+						<h3 class="mesa__effect-card-title">${effect.name}</h3>
+						<p class="mesa__effect-card-detail">${effectDescription}</p>
+					</div>
+					<button class="mesa__effect-remove mesa__effect-remove--inline" type="button" data-mesa-effect-remove="${effect.instanceId}" aria-label="Remover ${effect.name}" title="Remover efeito">×</button>
 				</div>
-			</div>
-			<div class="mesa__effect-controls${isPowerOnlyEffect ? ' mesa__effect-controls--power-only' : ' mesa__effect-controls--counted'}">
-				<label class="mesa__effect-field">
-					<span class="mesa__effect-field-label">Potência</span>
-					<input class="mesa__effect-input" type="number"${powerMinAttribute}${powerMaxAttribute} step="1" value="${effect.power}" data-mesa-effect-field="power" data-mesa-effect-instance="${effect.instanceId}">
-				</label>
-				${isPowerOnlyEffect ? '' : `
-				<label class="mesa__effect-field">
-					<span class="mesa__effect-field-label">Count</span>
-					<input class="mesa__effect-input" type="number" min="0" step="1" value="${effect.count}" data-mesa-effect-field="count" data-mesa-effect-instance="${effect.instanceId}">
-				</label>
-				`}
-				<div class="mesa__effect-actions${isModifierEffect ? ' mesa__effect-actions--modifier' : ''}">
-					${isModifierEffect ? `
-					<label class="mesa__effect-modifier-toggle">
-						<input type="checkbox" data-mesa-effect-active="${effect.instanceId}"${effect.active ? ' checked' : ''}>
-						<span>Ativo</span>
+				<div class="mesa__effect-controls mesa__effect-controls--modifier">
+					<label class="mesa__effect-field mesa__effect-potency-inline">
+						<span class="mesa__effect-field-label">Potência</span>
+						<input class="mesa__effect-input mesa__effect-input--compact" type="number" min="1" max="10" step="1" value="${effect.power}" data-mesa-effect-field="power" data-mesa-effect-instance="${effect.instanceId}">
 					</label>
-					` : ''}
-					<button class="mesa__effect-apply" type="button" data-mesa-effect-apply="${effect.instanceId}"${effect.count <= 0 ? ' disabled' : ''}>Aplicar</button>
-					<button class="mesa__effect-remove" type="button" data-mesa-effect-remove="${effect.instanceId}" aria-label="Remover ${effect.name}" title="Remover efeito">×</button>
-				</div>
-			</div>
-			<div class="mesa__effect-adjustments${isPowerOnlyEffect ? '' : ' mesa__effect-adjustments--with-count'}">
-				<div class="mesa__effect-adjustment">
-					<div class="mesa__effect-adjustment-row">
-						<label class="mesa__effect-adjustment-field">
-							<span class="mesa__effect-field-label">Aumentar Potência</span>
-							<input class="mesa__effect-input" type="number" min="0" step="1" value="${adjustmentValues.power}" data-mesa-effect-increase-field="power" data-mesa-effect-instance="${effect.instanceId}">
+					<div class="mesa__effect-actions mesa__effect-actions--modifier">
+						<label class="mesa__effect-modifier-toggle">
+							<input type="checkbox" data-mesa-effect-active="${effect.instanceId}"${effect.active ? ' checked' : ''}>
+							<span>Ativo</span>
 						</label>
-						<button class="mesa__effect-increase" type="button" data-mesa-effect-increase="${effect.instanceId}" data-mesa-effect-increase-field="power" aria-label="Aumentar potência" title="Aumentar potência">+</button>
-						<label class="mesa__effect-adjustment-field">
-							<span class="mesa__effect-field-label">Reduzir Potência</span>
-							<input class="mesa__effect-input" type="number" min="0" step="1" value="${adjustmentValues.decreasePower}" data-mesa-effect-decrease-field="power" data-mesa-effect-instance="${effect.instanceId}">
-						</label>
-						<button class="mesa__effect-increase" type="button" data-mesa-effect-decrease="${effect.instanceId}" data-mesa-effect-decrease-field="power" aria-label="Reduzir potência" title="Reduzir potência">-</button>
 					</div>
 				</div>
-				${isPowerOnlyEffect ? '' : `
-				<div class="mesa__effect-adjustment-separator" role="separator" aria-hidden="true"></div>
-				<div class="mesa__effect-adjustment">
-					<div class="mesa__effect-adjustment-row">
-						<label class="mesa__effect-adjustment-field">
-							<span class="mesa__effect-field-label">Aumentar Count</span>
-							<input class="mesa__effect-input" type="number" min="0" step="1" value="${adjustmentValues.count}" data-mesa-effect-increase-field="count" data-mesa-effect-instance="${effect.instanceId}">
+			`;
+		} else if (isDescriptionEffect) {
+			effectCard.innerHTML = `
+				<div class="mesa__effect-card-header">
+					<img class="mesa__effect-icon" src="${effect.icon}" alt="" aria-hidden="true">
+					<div class="mesa__effect-card-title-group mesa__effect-drag-handle" draggable="true">
+						<h3 class="mesa__effect-card-title">${effect.name}</h3>
+						<p class="mesa__effect-card-detail">${effectDescription}</p>
+					</div>
+					<button class="mesa__effect-remove mesa__effect-remove--inline" type="button" data-mesa-effect-remove="${effect.instanceId}" aria-label="Remover ${effect.name}" title="Remover efeito">×</button>
+				</div>
+				${effect.valueEnabled ? `
+				<label class="mesa__effect-field mesa__effect-description-value">
+					<span class="mesa__effect-field-label">Stack</span>
+					<input class="mesa__effect-input" type="text" value="${String(effect.value ?? '')}" data-mesa-effect-value="${effect.instanceId}" placeholder="Digite um valor">
+				</label>
+				` : ''}
+			`;
+		} else {
+			effectCard.innerHTML = `
+				<div class="mesa__effect-card-header">
+					<img class="mesa__effect-icon" src="${effect.icon}" alt="" aria-hidden="true">
+					<div class="mesa__effect-card-title-group mesa__effect-drag-handle" draggable="true">
+						<h3 class="mesa__effect-card-title">${effect.name}</h3>
+						<p class="mesa__effect-card-detail">${effectDescription}</p>
+					</div>
+					<button class="mesa__effect-remove mesa__effect-remove--inline" type="button" data-mesa-effect-remove="${effect.instanceId}" aria-label="Remover ${effect.name}" title="Remover efeito">×</button>
+				</div>
+				<div class="mesa__effect-controls${isPowerOnlyEffect ? ' mesa__effect-controls--power-only' : ' mesa__effect-controls--counted'}">
+					${isPowerOnlyEffect ? `
+					<div class="mesa__effect-power-inline-row">
+						<label class="mesa__effect-field mesa__effect-potency-inline">
+							<span class="mesa__effect-field-label">Potência</span>
+							<input class="mesa__effect-input mesa__effect-input--compact" type="number"${powerMinAttribute}${powerMaxAttribute} step="1" value="${effect.power}" data-mesa-effect-field="power" data-mesa-effect-instance="${effect.instanceId}">
 						</label>
-						<button class="mesa__effect-increase" type="button" data-mesa-effect-increase="${effect.instanceId}" data-mesa-effect-increase-field="count" aria-label="Aumentar count" title="Aumentar count">+</button>
-						<label class="mesa__effect-adjustment-field">
-							<span class="mesa__effect-field-label">Reduzir Count</span>
-							<input class="mesa__effect-input" type="number" min="0" step="1" value="${adjustmentValues.decreaseCount}" data-mesa-effect-decrease-field="count" data-mesa-effect-instance="${effect.instanceId}">
+						<button class="mesa__effect-apply mesa__effect-apply--primary" type="button" data-mesa-effect-apply="${effect.instanceId}"${effect.count <= 0 ? ' disabled' : ''}>Ativar Efeito</button>
+						<label class="mesa__effect-power-inline mesa__effect-power-adjustment-inline">
+							<span class="mesa__effect-field-label">Aumentar / Diminuir</span>
+							<input class="mesa__effect-input mesa__effect-input--compact" type="number"${powerMinAttribute}${powerMaxAttribute} step="1" value="${adjustmentValues.power}" aria-label="Ajuste de potência" data-mesa-effect-adjustment-field="power" data-mesa-effect-instance="${effect.instanceId}">
 						</label>
-						<button class="mesa__effect-increase" type="button" data-mesa-effect-decrease="${effect.instanceId}" data-mesa-effect-decrease-field="count" aria-label="Reduzir count" title="Reduzir count">-</button>
+						<div class="mesa__effect-power-stepper" aria-label="Ajustar potência">
+							<button class="mesa__effect-step-btn" type="button" data-mesa-effect-increase="${effect.instanceId}" data-mesa-effect-increase-field="power" aria-label="Aumentar potência" title="Aumentar potência">+</button>
+							<button class="mesa__effect-step-btn" type="button" data-mesa-effect-decrease="${effect.instanceId}" data-mesa-effect-decrease-field="power" aria-label="Reduzir potência" title="Reduzir potência">-</button>
+						</div>
+					</div>
+					` : `
+					<label class="mesa__effect-field">
+						<span class="mesa__effect-field-label">Potência</span>
+						<input class="mesa__effect-input" type="number"${powerMinAttribute}${powerMaxAttribute} step="1" value="${effect.power}" data-mesa-effect-field="power" data-mesa-effect-instance="${effect.instanceId}">
+					</label>
+					`}
+					${isPowerOnlyEffect ? '' : `
+					<div class="mesa__effect-field mesa__effect-count-field">
+						<div class="mesa__effect-count-header">
+							<span class="mesa__effect-field-label">Count</span>
+							<label class="mesa__effect-count-lock" title="Não reduzir o count ao ativar">
+								<input type="checkbox" data-mesa-effect-preserve-count="${effect.instanceId}"${effect.preserveCount ? ' checked' : ''}>
+								<span>Fixar</span>
+							</label>
+						</div>
+						<input class="mesa__effect-input" type="number" min="0" step="1" value="${effect.count}" data-mesa-effect-field="count" data-mesa-effect-instance="${effect.instanceId}">
+					</div>
+					`}
+					${isPowerOnlyEffect ? '' : `<button class="mesa__effect-apply mesa__effect-apply--primary" type="button" data-mesa-effect-apply="${effect.instanceId}"${effect.count <= 0 ? ' disabled' : ''}>Ativar Efeito</button>`}
+					<div class="mesa__effect-actions${isModifierEffect ? ' mesa__effect-actions--modifier' : ''}">
+						${isModifierEffect ? `
+						<label class="mesa__effect-modifier-toggle">
+							<input type="checkbox" data-mesa-effect-active="${effect.instanceId}"${effect.active ? ' checked' : ''}>
+							<span>Ativo</span>
+						</label>
+						` : ''}
 					</div>
 				</div>
-				`}
-			</div>
-		`;
+				<div class="mesa__effect-adjustments${isPowerOnlyEffect ? '' : ' mesa__effect-adjustments--with-count'}">
+					${isPowerOnlyEffect ? '' : `
+					<div class="mesa__effect-adjustment mesa__effect-adjustment--compact">
+						<label class="mesa__effect-power-inline mesa__effect-power-adjustment-inline">
+							<span class="mesa__effect-field-label">Aumentar / Diminuir Potência</span>
+							<input class="mesa__effect-input mesa__effect-input--compact" type="number"${powerMinAttribute}${powerMaxAttribute} step="1" value="${adjustmentValues.power}" aria-label="Ajuste de potência" data-mesa-effect-adjustment-field="power" data-mesa-effect-instance="${effect.instanceId}">
+						</label>
+						<div class="mesa__effect-power-stepper" aria-label="Ajustar potência">
+							<button class="mesa__effect-step-btn" type="button" data-mesa-effect-increase="${effect.instanceId}" data-mesa-effect-increase-field="power" aria-label="Aumentar potência" title="Aumentar potência">+</button>
+							<button class="mesa__effect-step-btn" type="button" data-mesa-effect-decrease="${effect.instanceId}" data-mesa-effect-decrease-field="power" aria-label="Reduzir potência" title="Reduzir potência">-</button>
+						</div>
+					</div>
+					<div class="mesa__effect-adjustment mesa__effect-adjustment--compact">
+						<label class="mesa__effect-power-inline mesa__effect-power-adjustment-inline">
+							<span class="mesa__effect-field-label">Aumentar / Diminuir Count</span>
+							<input class="mesa__effect-input mesa__effect-input--compact" type="number" min="0" step="1" value="${adjustmentValues.count}" aria-label="Ajuste de count" data-mesa-effect-adjustment-field="count" data-mesa-effect-instance="${effect.instanceId}">
+						</label>
+						<div class="mesa__effect-power-stepper" aria-label="Ajustar count">
+							<button class="mesa__effect-step-btn" type="button" data-mesa-effect-increase="${effect.instanceId}" data-mesa-effect-increase-field="count" aria-label="Aumentar count" title="Aumentar count">+</button>
+							<button class="mesa__effect-step-btn" type="button" data-mesa-effect-decrease="${effect.instanceId}" data-mesa-effect-decrease-field="count" aria-label="Reduzir count" title="Reduzir count">-</button>
+						</div>
+					</div>
+					`}
+				</div>
+			`;
+		}
 		mesaEffectsList.appendChild(effectCard);
 	});
 }
@@ -2321,6 +2953,10 @@ function updateMesaEffectInstanceField(effectInstanceId, field, value) {
 
 	const mesaState = readMesaState();
 	const currentEntry = getMesaStateEntry(selectedCharacter, mesaState);
+	const currentEffect = currentEntry.effects.find((effect) => effect.instanceId === normalizedId);
+	if (currentEffect?.properties === 'description' && (!currentEffect.valueEnabled || field !== 'value')) {
+		return;
+	}
 	const nextEffects = currentEntry.effects.map((effect) => {
 		if (effect.instanceId !== normalizedId) {
 			return effect;
@@ -2337,6 +2973,14 @@ function updateMesaEffectInstanceField(effectInstanceId, field, value) {
 
 		if (field === 'count') {
 			return { ...effect, count: normalizeNonNegativeIntOrDefault(value, effect.count ?? DEFAULT_MESA_EFFECT_COUNT) };
+		}
+
+		if (field === 'preserveCount') {
+			return { ...effect, preserveCount: Boolean(value) };
+		}
+
+		if (field === 'value') {
+			return { ...effect, value: String(value ?? '') };
 		}
 
 		return effect;
@@ -2512,6 +3156,11 @@ function applyBehaviorDamageModifiers(baseDamage, target, effects) {
 			return;
 		}
 
+		// Skip flat reductions handled separately (behavior 'reducao')
+		if (normalizeEffectHow(effect.how) === 'reducao') {
+			return;
+		}
+
 		const factor = getBehaviorModifierPower(effect) / 10;
 		if (normalizeEffectHow(effect.how) === 'increase') {
 			adjustedDamage *= (1 + factor);
@@ -2533,6 +3182,7 @@ function getMesaModifierPowerBonus(mesaState, action) {
 
 function resolveMesaModifierAction(effects, action, excludedInstanceId = '', activationCount = 1) {
 	let bonus = 0;
+	let flatReduction = 0;
 	let triggeredEffectsCount = 0;
 	const nextEffects = [];
 	const normalizedActivationCount = Math.max(parseNonNegativeInt(activationCount), 1);
@@ -2557,6 +3207,8 @@ function resolveMesaModifierAction(effects, action, excludedInstanceId = '', act
 
 		const power = normalizeNonNegativeIntOrDefault(effect.power, DEFAULT_MESA_EFFECT_POWER);
 		const usesCount = effect.properties !== 'power';
+		const isFlatReduction = normalizeEffectHow(effect.how) === 'reducao';
+
 		if (usesCount) {
 			const count = normalizeNonNegativeIntOrDefault(effect.count, DEFAULT_MESA_EFFECT_COUNT);
 			const activationUses = Math.min(count, normalizedActivationCount);
@@ -2565,7 +3217,11 @@ function resolveMesaModifierAction(effects, action, excludedInstanceId = '', act
 			}
 
 			const nextCount = count - activationUses;
-			bonus += power * activationUses;
+			if (isFlatReduction) {
+				flatReduction += power * activationUses;
+			} else {
+				bonus += power * activationUses;
+			}
 			triggeredEffectsCount += 1;
 			if (nextCount > 0) {
 				nextEffects.push({
@@ -2577,7 +3233,11 @@ function resolveMesaModifierAction(effects, action, excludedInstanceId = '', act
 			return;
 		}
 
-		bonus += power * normalizedActivationCount;
+		if (isFlatReduction) {
+			flatReduction += power * normalizedActivationCount;
+		} else {
+			bonus += power * normalizedActivationCount;
+		}
 		triggeredEffectsCount += 1;
 		nextEffects.push({
 			...effect,
@@ -2588,12 +3248,13 @@ function resolveMesaModifierAction(effects, action, excludedInstanceId = '', act
 	if (action !== 'effect-activation' && triggeredEffectsCount > 0) {
 		const chainActivationResult = resolveMesaModifierAction(nextEffects, 'effect-activation', excludedInstanceId, triggeredEffectsCount);
 		return {
-			bonus: bonus + chainActivationResult.bonus,
+			bonus: bonus + (chainActivationResult.bonus || 0),
+			flatReduction: flatReduction + (chainActivationResult.flatReduction || 0),
 			nextEffects: chainActivationResult.nextEffects
 		};
 	}
 
-	return { bonus, nextEffects };
+	return { bonus, flatReduction, nextEffects };
 }
 
 function addMesaEffectToCharacter() {
@@ -2624,7 +3285,7 @@ function addMesaEffectToCharacter() {
 	writeMesaState(mesaState);
 	renderMesaStatus();
 	if (mesaEffectSelect) {
-		mesaEffectSelect.value = template.id;
+		mesaEffectSelect.value = '';
 	}
 }
 
@@ -2645,6 +3306,7 @@ function applyMesaEffect(effectInstanceId) {
 	const effect = currentEntry.effects[effectIndex];
 	const power = normalizeNonNegativeIntOrDefault(effect.power, DEFAULT_MESA_EFFECT_POWER);
 	const count = normalizeNonNegativeIntOrDefault(effect.count, DEFAULT_MESA_EFFECT_COUNT);
+	const preserveCount = Boolean(effect.preserveCount);
 	const effectHow = normalizeEffectHow(effect.how);
 	const isIncrease = effectHow === 'increase';
 	const isPowerOnlyEffect = effect.properties === 'power';
@@ -2654,16 +3316,20 @@ function applyMesaEffect(effectInstanceId) {
 		return;
 	}
 
-	const affectsLife = effect.target === 'life' || effect.target === 'life-and-stagger';
-	const affectsStagger = effect.target === 'stagger' || effect.target === 'life-and-stagger';
-	const affectsSpeed = effect.target === 'speed';
-	const affectsCa = effect.target === 'ca';
+	const normalizedTarget = normalizeEffectTarget(effect.target);
+	const affectsLife = normalizedTarget === 'life' || normalizedTarget === 'life-and-stagger';
+	const affectsStagger = normalizedTarget === 'stagger' || normalizedTarget === 'life-and-stagger';
+	const affectsSpeed = normalizedTarget === 'speed';
+	const affectsCa = normalizedTarget === 'ca';
+	const affectsMovement = normalizedTarget === 'movement';
 	const speedRangeForEffect = getSpeedRangeBounds(selectedCharacter.speed);
 	const speedFallbackValue = speedRangeForEffect
 		? speedRangeForEffect.max
 		: parseNonNegativeInt(selectedCharacter.speed);
+	const movementFallbackValue = parseNonNegativeInt(selectedCharacter.deslocamento);
 	const caFallbackValue = parseNonNegativeInt(selectedCharacter.ca);
 	const currentSpeedValue = parseEditableStatValue(currentEntry.speedValue, speedFallbackValue);
+	const currentMovementValue = parseEditableStatValue(currentEntry.movementValue, movementFallbackValue);
 	const currentCaValue = parseEditableStatValue(currentEntry.caValue, caFallbackValue);
 	const maxLife = getCharacterMaxLife(selectedCharacter);
 	const maxStagger = getCharacterMaxStagger(selectedCharacter);
@@ -2676,6 +3342,9 @@ function applyMesaEffect(effectInstanceId) {
 	const nextSpeedValue = affectsSpeed
 		? String(isIncrease ? currentSpeedValue + power : Math.max(currentSpeedValue - power, 1))
 		: currentEntry.speedValue;
+	const nextMovementValue = affectsMovement
+		? String(isIncrease ? currentMovementValue + power : Math.max(currentMovementValue - power, 0))
+		: currentEntry.movementValue;
 	const nextCaValue = affectsCa
 		? String(isIncrease ? currentCaValue + power : Math.max(currentCaValue - power, 1))
 		: currentEntry.caValue;
@@ -2687,31 +3356,66 @@ function applyMesaEffect(effectInstanceId) {
 			power
 		};
 	} else if (isCountModifierEffect) {
-		const nextCount = count - 1;
-		if (nextCount <= 0) {
-			nextEffects.splice(effectIndex, 1);
-		} else {
+		if (preserveCount) {
 			nextEffects[effectIndex] = {
 				...effect,
-				count: nextCount,
 				power
 			};
+		} else {
+			const nextCount = count - 1;
+			if (nextCount <= 0) {
+				nextEffects.splice(effectIndex, 1);
+			} else {
+				nextEffects[effectIndex] = {
+					...effect,
+					count: nextCount,
+					power
+				};
+			}
 		}
 	} else {
-		const nextCount = count - 1;
-		if (nextCount <= 0) {
-			nextEffects.splice(effectIndex, 1);
-		} else {
+		if (preserveCount) {
 			nextEffects[effectIndex] = {
 				...effect,
-				count: nextCount,
 				power
 			};
+		} else {
+			const nextCount = count - 1;
+			if (nextCount <= 0) {
+				nextEffects.splice(effectIndex, 1);
+			} else {
+				nextEffects[effectIndex] = {
+					...effect,
+					count: nextCount,
+					power
+				};
+			}
 		}
- 	}
+	}
 
 	const modifierEffectActivationResolution = resolveMesaModifierAction(nextEffects, 'effect-activation', effect.instanceId);
-	const nextLifeWithEffectActivation = Math.max(nextLife - modifierEffectActivationResolution.bonus, 0);
+	const chainBonus = normalizeNonNegativeIntOrDefault(modifierEffectActivationResolution.bonus, 0);
+	const chainFlatReduction = normalizeNonNegativeIntOrDefault(modifierEffectActivationResolution.flatReduction, 0);
+
+	// Also consider attack modifiers (modifiers defined for attacks) when an effect causes damage
+	const attackModifierResolution = resolveMesaModifierAction(currentEntry.effects, 'attack');
+	const attackBonus = normalizeNonNegativeIntOrDefault(attackModifierResolution.bonus, 0);
+	const attackFlatReduction = normalizeNonNegativeIntOrDefault(attackModifierResolution.flatReduction, 0);
+
+	const totalFlatReduction = Math.max(0, attackFlatReduction + chainFlatReduction);
+	const totalBonus = Math.max(0, attackBonus + chainBonus);
+
+	let nextLifeWithEffectActivation = nextLife;
+	if (affectsLife && !isIncrease) {
+		// For damage effects, apply flat reduction (from attack modifiers and activation chain) before subtracting
+		const damageToApply = Math.max(power - totalFlatReduction, 0);
+		nextLifeWithEffectActivation = Math.max(currentEntry.life - damageToApply - totalBonus, 0);
+	} else if (affectsLife) {
+		// healing or increase
+		nextLifeWithEffectActivation = Math.max(nextLife - totalBonus, 0);
+	} else {
+		nextLifeWithEffectActivation = nextLife;
+	}
 
 	setMesaStateEntry(
 		selectedCharacter,
@@ -2720,13 +3424,14 @@ function applyMesaEffect(effectInstanceId) {
 		nextStagger,
 		modifierEffectActivationResolution.nextEffects,
 		nextSpeedValue,
-		nextCaValue
+		nextCaValue,
+		nextMovementValue
 	);
 	writeMesaState(mesaState);
 	renderMesaStatus();
 }
 
-function applyMesaDamage() {
+function applyMesaDamage({ staggerOnly = false } = {}) {
 	if (!mesaDamageInput) {
 		return;
 	}
@@ -2741,18 +3446,37 @@ function applyMesaDamage() {
 		return;
 	}
 
-	const damageType = getMesaDamageTypeSelection();
-	const resistanceMultiplier = getMesaDamageResistanceMultiplier(selectedCharacter, damageType);
-	const appliedDamage = Math.max(Math.round(damage * resistanceMultiplier), 0);
-
 	const mesaState = readMesaState();
 	const currentEntry = getMesaStateEntry(selectedCharacter, mesaState);
+	if (staggerOnly) {
+		const nextStagger = Math.max(currentEntry.stagger - damage, 0);
+		setMesaStateEntry(selectedCharacter, mesaState, currentEntry.life, nextStagger, currentEntry.effects);
+		writeMesaState(mesaState);
+		renderMesaStatus();
+		mesaDamageInput.value = '';
+		mesaDamageInput.focus();
+		return;
+	}
+
+	const damageType = getMesaDamageTypeSelection();
+	const resistanceMultiplier = currentEntry.staggerDamageActive
+		? STAGGER_DAMAGE_MULTIPLIER
+		: getMesaDamageResistanceMultiplier(selectedCharacter, damageType);
 	const modifierAttackResolution = resolveMesaModifierAction(currentEntry.effects, 'attack');
+	const flatReduction = normalizeNonNegativeIntOrDefault(modifierAttackResolution.flatReduction, 0);
+
+	// Apply flat reductions before resistances
+	const damageAfterFlat = Math.max(damage - flatReduction, 0);
+	const appliedDamage = Math.max(Math.round(damageAfterFlat * resistanceMultiplier), 0);
 	const currentLife = currentEntry.life;
 	const currentStagger = currentEntry.stagger;
-	const adjustedLifeDamage = applyBehaviorDamageModifiers(appliedDamage, 'life', modifierAttackResolution.nextEffects);
 	const adjustedStaggerDamage = applyBehaviorDamageModifiers(appliedDamage, 'stagger', modifierAttackResolution.nextEffects);
-	const nextLife = Math.max(currentLife - adjustedLifeDamage - modifierAttackResolution.bonus, 0);
+	const adjustedLifeDamage = staggerOnly
+		? 0
+		: applyBehaviorDamageModifiers(appliedDamage, 'life', modifierAttackResolution.nextEffects);
+	const nextLife = staggerOnly
+		? currentLife
+		: Math.max(currentLife - adjustedLifeDamage - normalizeNonNegativeIntOrDefault(modifierAttackResolution.bonus, 0), 0);
 	const nextStagger = Math.max(currentStagger - adjustedStaggerDamage, 0);
 
 	setMesaStateEntry(selectedCharacter, mesaState, nextLife, nextStagger, modifierAttackResolution.nextEffects);
@@ -2790,13 +3514,13 @@ function applyMesaHeal() {
 	const currentStagger = currentEntry.stagger;
 	const maxLife = getCharacterMaxLife(selectedCharacter);
 	const maxStagger = getCharacterMaxStagger(selectedCharacter);
-	const nextLife = shouldHealLife ? Math.min(currentLife + heal + modifierHealResolution.bonus, maxLife) : currentLife;
-	const nextStagger = shouldHealStagger ? Math.min(currentStagger + heal + modifierHealResolution.bonus, maxStagger) : currentStagger;
+	const healBonus = normalizeNonNegativeIntOrDefault(modifierHealResolution.bonus, 0);
+	const nextLife = shouldHealLife ? Math.min(currentLife + heal + healBonus, maxLife) : currentLife;
+	const nextStagger = shouldHealStagger ? Math.min(currentStagger + heal + healBonus, maxStagger) : currentStagger;
 
 	setMesaStateEntry(selectedCharacter, mesaState, nextLife, nextStagger, modifierHealResolution.nextEffects);
 	writeMesaState(mesaState);
 	renderMesaStatus();
-	mesaHealInput.value = '';
 	mesaHealInput.focus();
 }
 
@@ -2820,12 +3544,6 @@ function renderMesaStatus() {
 		return;
 	}
 
-	// Check if no character is selected (placeholder value is empty)
-	if (!mesaCharacterSelect || mesaCharacterSelect.value === '') {
-		clearMesaStatus();
-		return;
-	}
-
 	if (!characters.length) {
 		clearMesaStatus();
 		return;
@@ -2838,13 +3556,16 @@ function renderMesaStatus() {
 	}
 
 	lastLoadedMesaCharacter = selectedCharacter.nome;
+	mesaActiveCharacterName = selectedCharacter.nome;
+	if (mesaCharacterSelect) {
+		mesaCharacterSelect.value = selectedCharacter.nome;
+	}
 
 	// Show the content wrapper
 	if (mesaContentWrapper) {
 		mesaContentWrapper.hidden = false;
 	}
 
-	// Show the right content (image area)
 	if (mesaRightContent) {
 		mesaRightContent.hidden = false;
 	}
@@ -2876,7 +3597,8 @@ function renderMesaStatus() {
 	if (!initialStats) {
 		initialStats = {
 			speed: speedRangeBounds ? String(rollSpeedRange(speedRangeBounds) ?? '') : String(selectedCharacter.speed || '').trim(),
-			ca: String(selectedCharacter.ca ?? '').trim()
+			ca: String(selectedCharacter.ca ?? '').trim(),
+			movement: String(selectedCharacter.deslocamento ?? '').trim()
 		};
 		mesaInitialStatsByCharacter[characterKey] = initialStats;
 
@@ -2887,7 +3609,8 @@ function renderMesaStatus() {
 			currentEntry.stagger,
 			currentEntry.effects,
 			initialStats.speed,
-			initialStats.ca
+			initialStats.ca,
+			initialStats.movement
 		);
 		writeMesaState(mesaState);
 	}
@@ -2896,20 +3619,32 @@ function renderMesaStatus() {
 	const caBaseValue = String(selectedCharacter.ca ?? '').trim();
 	const caDisplayValue = caBaseValue || '-';
 	const caInputValue = currentEntry.caValue || initialStats.ca;
-	const movementValue = String(selectedCharacter.deslocamento ?? '').trim() || '???';
+	const movementInputValue = currentEntry.movementValue || initialStats.movement;
 	const slashResistance = getResistanceDisplayData(selectedCharacter.resistencias?.slash);
 	const pierceResistance = getResistanceDisplayData(selectedCharacter.resistencias?.pierce);
 	const bluntResistance = getResistanceDisplayData(selectedCharacter.resistencias?.blunt);
+	const currentCombatTab = normalizeMesaCombatTab(currentEntry.combatTab);
 
-	mesaStatus.innerHTML = `
-		<div class="mesa__status-card">
-			<div class="mesa__status-header">
-			<h2 class="mesa__status-title">${selectedCharacter.nome}</h2>
-			<button id="mesa-reset-button" class="mesa__damage-attack mesa__status-reset-btn" type="button" aria-label="Resetar vida e stagger" title="Resetar vida e stagger para o máximo">
-				<img src="res/reset.png" alt="" aria-hidden="true">
-			</button>
-			</div>
-			<div class="mesa__status-metrics">
+	if (mesaSelectContainer) {
+		mesaSelectContainer.hidden = false;
+	}
+
+		mesaStatus.innerHTML = `
+			<div class="mesa__status-card">
+				<div class="mesa__status-header">
+					<h2 id="mesa-character-name" class="mesa__status-title mesa__status-title--button" role="button" tabindex="0" aria-label="Resetar Vida e Stagger do Personagem">${selectedCharacter.nome}</h2>
+					<div class="mesa__status-actions">
+						<button id="mesa-return-button" class="mesa__status-close-btn" type="button" aria-label="Voltar para a seleção de personagem" title="Voltar para a seleção de personagem">X</button>
+					</div>
+				</div>
+			<div class="mesa__status-body">
+				<div class="mesa__status-preview">
+					<button class="image-maximize-btn" type="button" data-open-preview="mesa-character-image" aria-label="Maximizar imagem">⛶</button>
+					<img id="mesa-character-image" src="" alt="Imagem do personagem" class="mesa__character-image" hidden>
+					<img id="mesa-character-stagger-overlay" src="res/staggered.png" alt="" class="mesa__character-stagger-overlay" aria-hidden="true" hidden>
+					<span id="mesa-image-placeholder" class="mesa__placeholder">Nenhuma imagem selecionada</span>
+				</div>
+				<div class="mesa__status-metrics">
 				<div class="mesa__status-metric">
 					<p class="mesa__status-text"><span class="mesa__status-label"><img src="res/hp.png" alt="" class="mesa__status-icon" aria-hidden="true">Vida</span> <span class="mesa__status-value">${currentLife} / ${maxLife}</span></p>
 					<div class="mesa__hp-bar" role="progressbar" aria-label="Vida" aria-valuemin="0" aria-valuemax="${maxLife}" aria-valuenow="${currentLife}">
@@ -2924,13 +3659,13 @@ function renderMesaStatus() {
 				</div>
 				<div class="mesa__status-metrics-row">
 					<div class="mesa__status-metric mesa__status-metric--simple">
-						<p class="mesa__status-text"><span class="mesa__status-label">Speed</span> <img id="mesa-speed-reset-icon" src="res/speed.png" alt="Resetar speed" class="mesa__status-icon mesa__status-icon--reset" role="button" tabindex="0" title="Resetar speed para o valor inicial"> <span id="mesa-speed-value" class="mesa__status-value">${speedRangeText}</span> <button id="mesa-speed-roll-button" class="mesa__speed-roll" type="button" aria-label="Rolar speed" title="Rolar speed"${speedRangeBounds ? '' : ' disabled'}>🎲</button> <input id="mesa-speed-result" class="mesa__speed-input" type="text" value="${speedInitialResult}" aria-label="Resultado da rolagem de speed"></p>
+						<p class="mesa__status-text"><span id="mesa-speed-roll-trigger" class="mesa__status-label mesa__status-label--button" role="button" tabindex="0" aria-label="Rolar speed">Speed</span> <img id="mesa-speed-reset-icon" src="res/speed.png" alt="Resetar speed" class="mesa__status-icon mesa__status-icon--reset" role="button" tabindex="0" title="Resetar speed para o valor inicial"> <span id="mesa-speed-value" class="mesa__status-value">${speedRangeText}</span> <input id="mesa-speed-result" class="mesa__speed-input" type="text" value="${speedInitialResult}" aria-label="Resultado da rolagem de speed"></p>
 					</div>
 					<div class="mesa__status-metric mesa__status-metric--simple">
 						<p class="mesa__status-text"><span class="mesa__status-label">CA</span> <img id="mesa-ca-reset-icon" src="res/ca.png" alt="Resetar CA" class="mesa__status-icon mesa__status-icon--reset" role="button" tabindex="0" title="Resetar CA para o valor inicial"> <span class="mesa__status-value">${caDisplayValue}</span> <input id="mesa-ca-value" class="mesa__speed-input" type="text" value="${caInputValue}" aria-label="Campo de CA"></p>
 					</div>
 					<div class="mesa__status-metric mesa__status-metric--simple">
-						<p class="mesa__status-text"><span class="mesa__status-label"><img src="res/movement.png" alt="" class="mesa__status-icon" aria-hidden="true">Deslocamento</span> <span class="mesa__status-value">${movementValue}<em class="mesa__unit">feet</em></span></p>
+						<p class="mesa__status-text"><span class="mesa__status-label">Deslocamento</span> <img id="mesa-movement-reset-icon" src="res/movement.png" alt="Resetar deslocamento" class="mesa__status-icon mesa__status-icon--reset" role="button" tabindex="0" title="Resetar deslocamento para o valor inicial"> <input id="mesa-movement-value" class="mesa__speed-input" type="text" value="${movementInputValue}" aria-label="Campo de Deslocamento"></p>
 					</div>
 				</div>
 				<div class="mesa__status-divider" role="separator" aria-hidden="true"></div>
@@ -2950,21 +3685,57 @@ function renderMesaStatus() {
 						</div>
 					</div>
 				</div>
-			</div>
+				<!--
+				<div class="mesa__combat-tabs" role="tablist" aria-label="Painel de combate">
+					<button id="mesa-combat-effects-tab" class="mesa__combat-tab${currentCombatTab === 'effects' ? ' mesa__combat-tab--active' : ''}" type="button" role="tab" aria-selected="${currentCombatTab === 'effects'}" aria-controls="mesa-combat-effects-panel" data-mesa-combat-tab="effects">Efeitos</button>
+					<button id="mesa-combat-descriptions-tab" class="mesa__combat-tab${currentCombatTab === 'descriptions' ? ' mesa__combat-tab--active' : ''}" type="button" role="tab" aria-selected="${currentCombatTab === 'descriptions'}" aria-controls="mesa-combat-descriptions-panel" data-mesa-combat-tab="descriptions">Descrições</button>
+				</div>
+				<div id="mesa-combat-effects-panel" class="mesa__combat-panel" role="tabpanel" aria-labelledby="mesa-combat-effects-tab"${currentCombatTab === 'effects' ? '' : ' hidden'}>
+					<div class="mesa__field mesa__damage-section">
+						<div class="mesa__effect-control-row">
+							<div class="mesa__effect-picker">
+								<select id="mesa-effect-select" aria-label="Selecionar efeito">
+								<option value="" disabled selected hidden>Selecione um efeito</option>
+								</select>
+							</div>
+							<div class="mesa__effect-separator" aria-hidden="true"></div>
+							<button id="mesa-effect-add-button" class="mesa__effect-add" type="button" aria-label="Adicionar efeito" title="Adicionar efeito">
+								+
+							</button>
+						</div>
+					</div>
+					<div id="mesa-effects-list" class="mesa__effect-list" aria-label="Efeitos aplicados"></div>
+				</div>
+				<div id="mesa-combat-descriptions-panel" class="mesa__combat-panel" role="tabpanel" aria-labelledby="mesa-combat-descriptions-tab"${currentCombatTab === 'descriptions' ? '' : ' hidden'}>
+					<div class="mesa__field mesa__damage-section mesa__damage-section--descriptions">
+						<label class="mesa__combat-description-label" for="mesa-comments">Descrições</label>
+						<textarea id="mesa-comments" rows="4" placeholder="Ex.: O personagem vai focar em fazer..."></textarea>
+					</div>
+				</div>
+				</div>
+				-->
 		</div>
 	`;
 
-	// Add event listener for reset button
-	const resetButton = document.getElementById('mesa-reset-button');
-	if (resetButton) {
-		resetButton.addEventListener('click', applyMesaReset);
+	mesaCharacterImage = document.getElementById('mesa-character-image');
+	mesaImagePlaceholder = document.getElementById('mesa-image-placeholder');
+	mesaCharacterStaggerOverlay = document.getElementById('mesa-character-stagger-overlay');
+
+	const returnButton = document.getElementById('mesa-return-button');
+	if (returnButton) {
+		returnButton.addEventListener('click', () => {
+			closeMesaCharacterInstance(mesaActiveCharacterName || lastLoadedMesaCharacter);
+		});
 	}
 
-	const speedRollButton = document.getElementById('mesa-speed-roll-button');
+	const speedRollTrigger = document.getElementById('mesa-speed-roll-trigger');
 	const speedResultInput = document.getElementById('mesa-speed-result');
 	const caValueInput = document.getElementById('mesa-ca-value');
+	const movementValueInput = document.getElementById('mesa-movement-value');
 	const speedResetIcon = document.getElementById('mesa-speed-reset-icon');
 	const caResetIcon = document.getElementById('mesa-ca-reset-icon');
+	const movementResetIcon = document.getElementById('mesa-movement-reset-icon');
+	const mesaCharacterName = document.getElementById('mesa-character-name');
 
 	const persistEditableMesaStatusFields = () => {
 		const nextMesaState = readMesaState();
@@ -2976,13 +3747,17 @@ function renderMesaStatus() {
 			nextEntry.stagger,
 			nextEntry.effects,
 			speedResultInput instanceof HTMLInputElement ? speedResultInput.value : nextEntry.speedValue,
-			caValueInput instanceof HTMLInputElement ? caValueInput.value : nextEntry.caValue
+			caValueInput instanceof HTMLInputElement ? caValueInput.value : nextEntry.caValue,
+			movementValueInput instanceof HTMLInputElement ? movementValueInput.value : nextEntry.movementValue,
+			nextEntry.staggerDamageActive,
+			nextEntry.comments,
+			nextEntry.combatTab
 		);
 		writeMesaState(nextMesaState);
 	};
 
-	if (speedRollButton instanceof HTMLButtonElement && speedResultInput instanceof HTMLInputElement) {
-		speedRollButton.addEventListener('click', () => {
+	if (speedRollTrigger instanceof HTMLElement && speedResultInput instanceof HTMLInputElement) {
+		const rollSpeedFromTrigger = () => {
 			const rolledValue = rollSpeedRange(speedRangeBounds);
 			if (rolledValue === null) {
 				return;
@@ -2992,6 +3767,14 @@ function renderMesaStatus() {
 			initialStats.speed = speedResultInput.value;
 			mesaInitialStatsByCharacter[characterKey] = initialStats;
 			persistEditableMesaStatusFields();
+		};
+
+		speedRollTrigger.addEventListener('click', rollSpeedFromTrigger);
+		speedRollTrigger.addEventListener('keydown', event => {
+			if (event.key === 'Enter' || event.key === ' ') {
+				event.preventDefault();
+				rollSpeedFromTrigger();
+			}
 		});
 	}
 
@@ -3003,6 +3786,12 @@ function renderMesaStatus() {
 
 	if (caValueInput instanceof HTMLInputElement) {
 		caValueInput.addEventListener('input', () => {
+			persistEditableMesaStatusFields();
+		});
+	}
+
+	if (movementValueInput instanceof HTMLInputElement) {
+		movementValueInput.addEventListener('input', () => {
 			persistEditableMesaStatusFields();
 		});
 	}
@@ -3044,12 +3833,58 @@ function renderMesaStatus() {
 		});
 	}
 
+	if (movementResetIcon instanceof HTMLElement && movementValueInput instanceof HTMLInputElement) {
+		const resetMovementToInitial = () => {
+			movementValueInput.value = initialStats.movement;
+			persistEditableMesaStatusFields();
+		};
+
+		movementResetIcon.addEventListener('click', resetMovementToInitial);
+		movementResetIcon.addEventListener('keydown', (event) => {
+			handleResetIconKeydown(event, resetMovementToInitial);
+		});
+	}
+
+	if (mesaCharacterName instanceof HTMLElement) {
+		const confirmAndResetCharacter = async () => {
+			const confirmedReset = await showCaptionWindow({
+				title: 'Confirmar Reset',
+				message: 'Resetar Vida e Stagger do Personagem?',
+				confirmText: 'Sim',
+				cancelText: 'Não',
+				showCancel: true
+			});
+
+			if (!confirmedReset) {
+				return;
+			}
+
+			applyMesaReset();
+		};
+
+		mesaCharacterName.addEventListener('click', () => {
+			void confirmAndResetCharacter();
+		});
+		mesaCharacterName.addEventListener('keydown', (event) => {
+			if (event.key !== 'Enter' && event.key !== ' ') {
+				return;
+			}
+
+			event.preventDefault();
+			void confirmAndResetCharacter();
+		});
+	}
+
 	// Render character image
 	const imageSource = resolveCharacterImageSource(selectedCharacter);
 	if (mesaCharacterImage && mesaImagePlaceholder) {
 		if (imageSource) {
 			mesaCharacterImage.src = imageSource;
 			mesaCharacterImage.alt = selectedCharacter.nome;
+			mesaCharacterImage.title = 'Clique para ativar ou desativar o stagger no dano';
+			mesaCharacterImage.setAttribute('role', 'button');
+			mesaCharacterImage.setAttribute('tabindex', '0');
+			mesaCharacterImage.setAttribute('aria-pressed', String(Boolean(currentEntry.staggerDamageActive)));
 			mesaCharacterImage.hidden = false;
 			mesaImagePlaceholder.hidden = true;
 		} else {
@@ -3058,7 +3893,27 @@ function renderMesaStatus() {
 		}
 	}
 
+	if (mesaCharacterImage) {
+		const toggleMesaDamageStagger = () => {
+			setMesaDamageStaggerState(selectedCharacter, !currentEntry.staggerDamageActive);
+		};
+
+		mesaCharacterImage.addEventListener('click', toggleMesaDamageStagger);
+		mesaCharacterImage.addEventListener('keydown', (event) => {
+			if (event.key !== 'Enter' && event.key !== ' ') {
+				return;
+			}
+
+			event.preventDefault();
+			toggleMesaDamageStagger();
+		});
+	}
+
 	updateMesaDamagePreviewOverlay();
+	if (mesaCommentsInput instanceof HTMLTextAreaElement) {
+		mesaCommentsInput.value = currentEntry.comments || '';
+	}
+	updateMesaCombatTabUI(currentEntry.combatTab);
 
 	// Render additional character information
 	if (mesaInfo) {
@@ -3066,6 +3921,7 @@ function renderMesaStatus() {
 	}
 
 	renderMesaEffects(selectedCharacter, mesaState);
+	renderMesaInstanceBar();
 
 }
 
@@ -3090,37 +3946,41 @@ function renderMesaPanel() {
 
 	if (!characters.length) {
 		mesaCharacterSelect.disabled = true;
+		mesaOpenCharacterNames = [];
+		mesaActiveCharacterName = '';
 		lastLoadedMesaCharacter = '';
 		lastSelectedMesaCharacter = '';
 		clearMesaStatus();
+		renderMesaInstanceBar();
 		return;
 	}
 
 	mesaCharacterSelect.disabled = false;
+	syncMesaInstancesWithCharacters(characters);
 
-	const hasLoadedCharacter = lastLoadedMesaCharacter && characters.some((char) => char.nome === lastLoadedMesaCharacter);
+	const hasActiveCharacter = mesaActiveCharacterName && characters.some((char) => char.nome === mesaActiveCharacterName);
 	const hasSelectedCharacter = lastSelectedMesaCharacter && characters.some((char) => char.nome === lastSelectedMesaCharacter);
 
-	if (hasLoadedCharacter) {
-		mesaCharacterSelect.value = lastLoadedMesaCharacter;
+	if (hasActiveCharacter) {
+		mesaCharacterSelect.value = mesaActiveCharacterName;
 		renderMesaStatus();
 		return;
 	}
 
-	if (lastLoadedMesaCharacter && !hasLoadedCharacter) {
-		lastLoadedMesaCharacter = '';
-	}
-
-	mesaCharacterSelect.value = '';
-
 	if (hasSelectedCharacter) {
 		mesaCharacterSelect.value = lastSelectedMesaCharacter;
+	} else {
+		mesaCharacterSelect.value = '';
 	}
 
 	clearMesaStatus();
+	renderMesaInstanceBar();
 }
 
 function clearMesaStatus() {
+	if (mesaSelectContainer) {
+		mesaSelectContainer.hidden = false;
+	}
 	if (mesaContentWrapper) {
 		mesaContentWrapper.hidden = true;
 	}
@@ -3160,6 +4020,13 @@ function clearMesaStatus() {
 	if (mesaEffectSelect) {
 		mesaEffectSelect.value = '';
 	}
+	if (mesaStatus) {
+		mesaStatus.innerHTML = '';
+	}
+	if (mesaInfo) {
+		mesaInfo.innerHTML = '';
+	}
+	renderMesaInstanceBar();
 }
 
 function getNoCharactersMessageMarkup() {
@@ -3361,11 +4228,15 @@ function initializeCharacterViewer() {
 	const storedCharacters = readStoredCharacters();
 	characters = [...storedCharacters];
 	activeCharacterIndex = characters.length > 0 ? 0 : -1;
+	const storedMesaInstances = readMesaInstancesState();
+	mesaOpenCharacterNames = storedMesaInstances.openCharacterNames;
+	mesaActiveCharacterName = storedMesaInstances.activeCharacterName;
 	setEffectsFormOpen(false);
 	renderKeywordRegistry();
 	renderEffectsRegistry();
 	renderMesaEffectOptions();
 	syncMesaStateWithCharacters(characters);
+	syncMesaInstancesWithCharacters(characters);
 	syncMesaEffectsWithRegistry();
 	updateMesaAvailability();
 	renderCharacterList();
@@ -3376,12 +4247,32 @@ function initializeCharacterViewer() {
 
 tabs.forEach((tab) => {
 	tab.addEventListener('click', () => {
-		setActivePanel(tab.dataset.target);
+		console.log('Tab clicked:', tab.dataset.target);
+		try {
+			setActivePanel(tab.dataset.target);
+		} catch (e) {
+			console.error('Error activating panel', e);
+		}
 	});
 });
 
 navbarHome?.addEventListener('click', () => {
 	setActivePanel('inicio');
+});
+
+navbarDropdowns.forEach((dropdown) => {
+	dropdown.addEventListener('click', (event) => {
+		if (event.target instanceof HTMLElement && event.target.closest('.navbar__submenu')) {
+			return;
+		}
+
+		navbarDropdowns.forEach((otherDropdown) => {
+			if (otherDropdown !== dropdown) {
+				otherDropdown.classList.remove('navbar__dropdown--open');
+			}
+		});
+		dropdown.classList.toggle('navbar__dropdown--open');
+	});
 });
 
 clearLocalStorageHomeButton?.addEventListener('click', async () => {
@@ -3401,6 +4292,20 @@ clearLocalStorageHomeButton?.addEventListener('click', async () => {
 	window.location.reload();
 });
 
+exportDataHomeButton?.addEventListener('click', async () => {
+	await exportAppData();
+});
+
+importDataHomeButton?.addEventListener('click', () => {
+	importDataInput?.click();
+});
+
+importDataInput?.addEventListener('change', async () => {
+	const selectedFile = importDataInput.files?.[0];
+	importDataInput.value = '';
+	await importAppDataFromFile(selectedFile);
+});
+
 chooseImageButton.addEventListener('click', () => {
 	imageInput.click();
 });
@@ -3414,6 +4319,7 @@ effectsAddButton?.addEventListener('click', () => {
 });
 
 effectsOpenFormButton?.addEventListener('click', () => {
+	resetEffectsForm();
 	setEffectsFormOpen(true);
 });
 
@@ -3437,12 +4343,26 @@ effectsBehaviorInputs.forEach((input) => {
 	});
 });
 
+effectsPropertiesModeInputs.forEach((input) => {
+	input.addEventListener('change', () => {
+		updateEffectsBehaviorState();
+		updateEffectsHowVisibility();
+	});
+});
+
 effectsActivationSelect?.addEventListener('change', () => {
 	updateEffectsModifierDefinitionVisibility();
 });
 
 effectsTargetSelect?.addEventListener('change', () => {
 	updateEffectsHowVisibility();
+});
+
+effectsTargetAddButton?.addEventListener('click', () => {
+	const val = effectsTargetSelect?.value;
+	if (!val) return;
+	const label = effectsTargetSelect?.selectedOptions?.[0]?.textContent || val;
+	addTargetTag(val, label);
 });
 
 effectsRemoveImageButton?.addEventListener('click', () => {
@@ -3456,6 +4376,19 @@ mesaEffectsList?.addEventListener('input', (event) => {
 	}
 
 	const adjustmentInstanceId = target.dataset.mesaEffectInstance ?? '';
+	const unifiedAdjustmentField = target.dataset.mesaEffectAdjustmentField ?? '';
+	if (adjustmentInstanceId && (unifiedAdjustmentField === 'power' || unifiedAdjustmentField === 'count')) {
+		if (!mesaEffectAdjustmentInputs[adjustmentInstanceId]) {
+			mesaEffectAdjustmentInputs[adjustmentInstanceId] = { power: 1, count: 1, decreasePower: 1, decreaseCount: 1 };
+		}
+
+		const normalizedValue = normalizeNonNegativeIntOrDefault(target.value, 1);
+		mesaEffectAdjustmentInputs[adjustmentInstanceId][unifiedAdjustmentField] = normalizedValue;
+		const decreaseMemoryKey = unifiedAdjustmentField === 'power' ? 'decreasePower' : 'decreaseCount';
+		mesaEffectAdjustmentInputs[adjustmentInstanceId][decreaseMemoryKey] = normalizedValue;
+		return;
+	}
+
 	const adjustmentField = target.dataset.mesaEffectIncreaseField ?? '';
 	if (adjustmentInstanceId && (adjustmentField === 'power' || adjustmentField === 'count')) {
 		if (!mesaEffectAdjustmentInputs[adjustmentInstanceId]) {
@@ -3477,9 +4410,21 @@ mesaEffectsList?.addEventListener('input', (event) => {
 		return;
 	}
 
+	const valueEffectId = target.dataset.mesaEffectValue ?? '';
+	if (valueEffectId) {
+		updateMesaEffectInstanceField(valueEffectId, 'value', target.value);
+		return;
+	}
+
 	const activeEffectId = target.dataset.mesaEffectActive ?? '';
 	if (activeEffectId) {
 		setMesaEffectInstanceActive(activeEffectId, target.checked);
+		return;
+	}
+
+	const preserveCountEffectId = target.dataset.mesaEffectPreserveCount ?? '';
+	if (preserveCountEffectId) {
+		updateMesaEffectInstanceField(preserveCountEffectId, 'preserveCount', target.checked);
 		return;
 	}
 
@@ -3519,13 +4464,21 @@ mesaEffectsList?.addEventListener('click', (event) => {
 		}
 
 		const amountInput = effectCard.querySelector(`[data-mesa-effect-increase-field="${field}"]`);
-		const amount = amountInput instanceof HTMLInputElement ? amountInput.value : '1';
+		const unifiedAmountInput = effectCard.querySelector(`[data-mesa-effect-adjustment-field="${field}"]`);
+		const amount = unifiedAmountInput instanceof HTMLInputElement
+			? unifiedAmountInput.value
+			: amountInput instanceof HTMLInputElement
+				? amountInput.value
+				: '1';
 		if (effectInstanceId && (field === 'power' || field === 'count')) {
 			if (!mesaEffectAdjustmentInputs[effectInstanceId]) {
 				mesaEffectAdjustmentInputs[effectInstanceId] = { power: 1, count: 1, decreasePower: 1, decreaseCount: 1 };
 			}
 
-			mesaEffectAdjustmentInputs[effectInstanceId][field] = normalizeNonNegativeIntOrDefault(amount, 1);
+			const normalizedAmount = normalizeNonNegativeIntOrDefault(amount, 1);
+			mesaEffectAdjustmentInputs[effectInstanceId][field] = normalizedAmount;
+			const decreaseMemoryKey = field === 'power' ? 'decreasePower' : 'decreaseCount';
+			mesaEffectAdjustmentInputs[effectInstanceId][decreaseMemoryKey] = normalizedAmount;
 		}
 		incrementMesaEffectInstanceField(effectInstanceId, field, amount);
 		return;
@@ -3540,15 +4493,22 @@ mesaEffectsList?.addEventListener('click', (event) => {
 			return;
 		}
 
+		const unifiedAmountInput = effectCard.querySelector(`[data-mesa-effect-adjustment-field="${field}"]`);
 		const amountInput = effectCard.querySelector(`[data-mesa-effect-decrease-field="${field}"]`);
-		const amount = amountInput instanceof HTMLInputElement ? amountInput.value : '1';
+		const amount = unifiedAmountInput instanceof HTMLInputElement
+			? unifiedAmountInput.value
+			: amountInput instanceof HTMLInputElement
+				? amountInput.value
+				: '1';
 		if (effectInstanceId && (field === 'power' || field === 'count')) {
 			if (!mesaEffectAdjustmentInputs[effectInstanceId]) {
 				mesaEffectAdjustmentInputs[effectInstanceId] = { power: 1, count: 1, decreasePower: 1, decreaseCount: 1 };
 			}
 
 			const memoryKey = field === 'power' ? 'decreasePower' : 'decreaseCount';
-			mesaEffectAdjustmentInputs[effectInstanceId][memoryKey] = normalizeNonNegativeIntOrDefault(amount, 1);
+			const normalizedAmount = normalizeNonNegativeIntOrDefault(amount, 1);
+			mesaEffectAdjustmentInputs[effectInstanceId][memoryKey] = normalizedAmount;
+			mesaEffectAdjustmentInputs[effectInstanceId][field] = normalizedAmount;
 		}
 		decrementMesaEffectInstanceField(effectInstanceId, field, amount);
 		return;
@@ -3568,14 +4528,13 @@ mesaEffectsList?.addEventListener('dragstart', (event) => {
 		return;
 	}
 
-	const effectCard = target.closest('.mesa__effect-card');
-	if (!(effectCard instanceof HTMLElement)) {
+	const dragHandle = target.closest('.mesa__effect-card-header');
+	if (!dragHandle || target.closest('.mesa__effect-remove')) {
 		return;
 	}
 
-	const isInteractiveElement = Boolean(target.closest('input, button, select, textarea, label'));
-	if (isInteractiveElement) {
-		event.preventDefault();
+	const effectCard = target.closest('.mesa__effect-card');
+	if (!(effectCard instanceof HTMLElement)) {
 		return;
 	}
 
@@ -3654,6 +4613,48 @@ mesaEffectsList?.addEventListener('dragend', () => {
 	clearMesaEffectDragState();
 });
 
+mesaCombatEffectsTab?.addEventListener('click', () => {
+	const selectedCharacter = getSelectedMesaCharacter();
+	if (!selectedCharacter) {
+		return;
+	}
+
+	setMesaCombatTab(selectedCharacter, 'effects');
+});
+
+mesaCombatDescriptionsTab?.addEventListener('click', () => {
+	const selectedCharacter = getSelectedMesaCharacter();
+	if (!selectedCharacter) {
+		return;
+	}
+
+	setMesaCombatTab(selectedCharacter, 'descriptions');
+});
+
+mesaCommentsInput?.addEventListener('input', () => {
+	const selectedCharacter = getSelectedMesaCharacter();
+	if (!selectedCharacter) {
+		return;
+	}
+
+	const mesaState = readMesaState();
+	const currentEntry = getMesaStateEntry(selectedCharacter, mesaState);
+	setMesaStateEntry(
+		selectedCharacter,
+		mesaState,
+		currentEntry.life,
+		currentEntry.stagger,
+		currentEntry.effects,
+		currentEntry.speedValue,
+		currentEntry.caValue,
+		currentEntry.movementValue,
+		currentEntry.staggerDamageActive,
+		mesaCommentsInput.value,
+		currentEntry.combatTab
+	);
+	writeMesaState(mesaState);
+});
+
 createKeywordAddButton?.addEventListener('click', () => {
 	addKeywordToSelection('create');
 });
@@ -3700,7 +4701,17 @@ saveButton.addEventListener('click', saveCharacter);
 mesaLoadCharacterButton?.addEventListener('click', () => {
 	if (!mesaCharacterSelect || mesaCharacterSelect.value === '') {
 		lastLoadedMesaCharacter = '';
+		mesaActiveCharacterName = '';
+		writeMesaInstancesState({
+			openCharacterNames: mesaOpenCharacterNames,
+			activeCharacterName: ''
+		});
+		renderMesaPanel();
+		return;
 	}
+
+	setMesaActiveCharacter(mesaCharacterSelect.value);
+	renderMesaPanel();
 	renderMesaStatus();
 });
 
@@ -3708,11 +4719,36 @@ mesaCharacterSelect?.addEventListener('change', () => {
 	lastSelectedMesaCharacter = mesaCharacterSelect.value;
 });
 
+mesaInstanceBar?.addEventListener('click', (event) => {
+	const target = event.target;
+	if (!(target instanceof HTMLElement)) {
+		return;
+	}
+
+	const instanceButton = target.closest('.mesa__instance-chip');
+	if (!(instanceButton instanceof HTMLElement)) {
+		return;
+	}
+
+	const characterName = instanceButton.dataset.characterName ?? '';
+	if (!characterName) {
+		return;
+	}
+
+	setMesaActiveCharacter(characterName, false);
+	renderMesaPanel();
+	renderMesaStatus();
+});
+
 mesaAttackButton?.addEventListener('click', () => {
 	applyMesaDamage();
 });
 
-[mesaDamageSlashToggle, mesaDamagePierceToggle, mesaDamageBluntToggle, mesaDamageStaggerToggle].forEach((toggle, index) => {
+mesaStaggerAttackButton?.addEventListener('click', () => {
+	applyMesaDamage({ staggerOnly: true });
+});
+
+[mesaDamageSlashToggle, mesaDamagePierceToggle, mesaDamageBluntToggle].forEach((toggle, index) => {
 	if (!toggle) {
 		return;
 	}
@@ -3859,6 +4895,10 @@ document.addEventListener('click', (event) => {
 	const target = event.target;
 	if (!(target instanceof Element)) {
 		return;
+	}
+
+	if (!target.closest('.navbar__dropdown')) {
+		closeNavbarDropdowns();
 	}
 
 	const effectApplyButton = target.closest('[data-mesa-effect-apply]');
@@ -4043,7 +5083,11 @@ window.addEventListener('hashchange', () => {
 
 updateImageButtonLabel();
 updateImagePreview();
-initializeCharacterViewer();
+try {
+	initializeCharacterViewer();
+} catch (e) {
+	console.error('Error during initializeCharacterViewer:', e);
+}
 
 const initialTargetId = panels.some((panel) => panel.id === window.location.hash.slice(1))
 	? window.location.hash.slice(1)

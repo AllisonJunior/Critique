@@ -1,16 +1,17 @@
 <!DOCTYPE html>
 <html lang="pt-br">
-
+    
 <head>
+    <meta charset="utf-8">
     <title>Critique</title>
     <link rel="stylesheet" href="stylesheet.css">
-    <link rel="icon" type="image/jpg" href="res/icon.jpg">
+    <link rel="icon" type="image/icon" href="res/icon.ico">
 </head>
 
 <body>
     <header class="navbar">
         <nav class="navbar__nav" aria-label="Navegação principal">
-            <div id="navbar-home" class="navbar__brand" aria-label="Nome da aplicação">Critique <span class="navbar__brand-version">v1.0</span></div>
+            <div id="navbar-home" class="navbar__brand" aria-label="Nome da aplicação">Critique <span class="navbar__brand-version">v2.0</span></div>
             <span class="navbar__separator" aria-hidden="true"></span>
             <div class="navbar__section">
                 <div class="navbar__dropdown">
@@ -38,7 +39,12 @@
             <div class="home">
                 <div class="home__content">
                     <img class="home__gif" src="res/welcome.gif" alt="Welcome">
-                    <button id="clear-localstorage-home" class="home__wipe-button" type="button" aria-label="Apagar todo o localStorage da aplicação" title="Apagar todo o localStorage da aplicação">Apagar LocalStorage</button>
+                    <div class="home__actions">
+                        <button id="export-data-home" class="home__action-button home__action-button--primary" type="button" aria-label="Exportar dados da aplicação" title="Exportar dados da aplicação">Exportar Dados</button>
+                        <button id="import-data-home" class="home__action-button" type="button" aria-label="Importar dados de outro dispositivo" title="Importar dados de outro dispositivo">Importar Dados</button>
+                        <button id="clear-localstorage-home" class="home__wipe-button" type="button" aria-label="Apagar todo o localStorage da aplicação" title="Apagar todo o localStorage da aplicação">Apagar Dados</button>
+                        <input id="import-data-input" type="file" accept="application/json,.json" hidden>
+                    </div>
                 </div>
             </div>
         </section>
@@ -77,7 +83,7 @@
                             <input id="char-name" type="text" autocomplete="off" placeholder="Ex.: Ricardo">
                         </div>
 
-                        <div class="creator__grid">
+                        <div class="creator__grid creator__grid--general">
                             <div class="creator__field">
                                 <label for="char-vida">Vida</label>
                                 <div class="creator__input-with-icon">
@@ -374,10 +380,7 @@
 
         <section id="mesa" class="panel" role="tabpanel" hidden>
             <div class="panel__card">
-                <h1 class="panel__title">Combate Simples</h1>
                 <div class="mesa">
-                    <p class="mesa__description">Visualize o status dos personagens cadastrados.</p>
-
                     <div class="mesa__select-container">
                         <div class="mesa__field">
                             <label for="mesa-character">Personagem</label>
@@ -388,6 +391,8 @@
                         <button id="mesa-load-character" class="mesa__load-btn" type="button">Carregar Personagem</button>
                     </div>
 
+                    <div id="mesa-instance-bar" class="mesa__instance-bar" aria-label="Instâncias abertas" hidden></div>
+
                     <div class="mesa__content-wrapper" id="mesa-content-wrapper" hidden>
                         <div class="mesa__left-content">
                             <article id="mesa-status" class="mesa__status" aria-live="polite"></article>
@@ -395,92 +400,87 @@
                             <div id="mesa-info" class="mesa__info"></div>
                         </div>
 
-                        <div id="mesa-vertical-separator" class="mesa__vertical-separator" aria-hidden="true" hidden></div>
-
                         <article id="mesa-damage-card" class="mesa__damage-card" aria-label="Controle de dano" hidden>
                             <h2 class="mesa__damage-title">Dano</h2>
-                            <div class="mesa__field mesa__damage-section">
-                                <div class="mesa__damage-input-row mesa__damage-input-row--type">
+                            <div class="mesa__damage-toggle-row mesa__damage-toggle-row--type" aria-label="Tipo de dano">
+                                <label class="mesa__damage-type-toggle mesa__toggle-chip" for="mesa-damage-slash-toggle">
+                                    <input id="mesa-damage-slash-toggle" type="checkbox" checked>
+                                    <span>Slash</span>
+                                </label>
+                                <label class="mesa__damage-type-toggle mesa__toggle-chip" for="mesa-damage-pierce-toggle">
+                                    <input id="mesa-damage-pierce-toggle" type="checkbox">
+                                    <span>Pierce</span>
+                                </label>
+                                <label class="mesa__damage-type-toggle mesa__toggle-chip" for="mesa-damage-blunt-toggle">
+                                    <input id="mesa-damage-blunt-toggle" type="checkbox">
+                                    <span>Blunt</span>
+                                </label>
+                            </div>
+                            <div class="mesa__field mesa__damage-section mesa__damage-section--type">
+                                <div class="mesa__damage-main-row">
                                     <input id="mesa-damage" type="number" min="0" placeholder="Ex.: 150">
-                                    <div class="mesa__damage-type-separator" aria-hidden="true"></div>
-                                    <div class="mesa__damage-type-toggles" aria-label="Tipo de dano">
-                                        <label class="mesa__damage-type-toggle" for="mesa-damage-slash-toggle">
-                                            <input id="mesa-damage-slash-toggle" type="checkbox" checked>
-                                            <span>Slash</span>
-                                        </label>
-                                        <label class="mesa__damage-type-toggle" for="mesa-damage-pierce-toggle">
-                                            <input id="mesa-damage-pierce-toggle" type="checkbox">
-                                            <span>Pierce</span>
-                                        </label>
-                                        <label class="mesa__damage-type-toggle" for="mesa-damage-blunt-toggle">
-                                            <input id="mesa-damage-blunt-toggle" type="checkbox">
-                                            <span>Blunt</span>
-                                        </label>
-                                        <label class="mesa__damage-type-toggle" for="mesa-damage-stagger-toggle">
-                                            <input id="mesa-damage-stagger-toggle" type="checkbox">
-                                            <span>Stagger</span>
-                                        </label>
-                                    </div>
-                                    <div class="mesa__damage-type-separator" aria-hidden="true"></div>
                                     <button id="mesa-attack-button" class="mesa__damage-attack" type="button" aria-label="Aplicar dano" title="Aplicar dano ao personagem selecionado">
                                         <img src="res/attack.png" alt="" aria-hidden="true">
+                                    </button>
+                                    <button id="mesa-stagger-attack-button" class="mesa__damage-attack mesa__damage-attack--stagger" type="button" aria-label="Aplicar dano apenas ao stagger" title="Aplicar dano apenas ao stagger">
+                                        <img src="res/stagger.png" alt="" aria-hidden="true">
                                     </button>
                                 </div>
                             </div>
 
+                            <div class="mesa__damage-separator" aria-hidden="true"></div>
+
                             <h2 class="mesa__damage-title">Curar</h2>
-                            <div class="mesa__field mesa__damage-section">
-                                    <div class="mesa__damage-input-row mesa__damage-input-row--heal">
-                                        <input id="mesa-heal" type="number" min="0" placeholder="Ex.: 150">
-                                    <div class="mesa__heal-separator" aria-hidden="true"></div>
-                                    <div class="mesa__heal-toggles" aria-label="Alvos da cura">
-                                        <label class="mesa__heal-toggle" for="mesa-heal-life-toggle">
-                                            <input id="mesa-heal-life-toggle" type="checkbox">
-                                            <span>Vida</span>
-                                        </label>
-                                        <label class="mesa__heal-toggle" for="mesa-heal-stagger-toggle">
-                                            <input id="mesa-heal-stagger-toggle" type="checkbox">
-                                            <span>Stagger</span>
-                                        </label>
-                                    </div>
-                                    <div class="mesa__heal-separator" aria-hidden="true"></div>
+                            <div class="mesa__damage-toggle-row mesa__damage-toggle-row--heal" aria-label="Alvos da cura">
+                                <label class="mesa__heal-toggle mesa__toggle-chip" for="mesa-heal-life-toggle">
+                                    <input id="mesa-heal-life-toggle" type="checkbox">
+                                    <span>Vida</span>
+                                </label>
+                                <label class="mesa__heal-toggle mesa__toggle-chip" for="mesa-heal-stagger-toggle">
+                                    <input id="mesa-heal-stagger-toggle" type="checkbox">
+                                    <span>Stagger</span>
+                                </label>
+                            </div>
+                            <div class="mesa__field mesa__damage-section mesa__damage-section--heal">
+                                <div class="mesa__damage-main-row">
+                                    <input id="mesa-heal" type="number" min="0" placeholder="Ex.: 150">
                                     <button id="mesa-heal-button" class="mesa__damage-attack" type="button" aria-label="Aplicar cura" title="Aplicar cura ao personagem selecionado">
                                         <img src="res/hp_heal.png" alt="" aria-hidden="true">
                                     </button>
                                 </div>
                             </div>
-
-                            <h2 class="mesa__damage-title">Efeitos</h2>
-                            <div class="mesa__field mesa__damage-section">
-                                <div class="mesa__damage-input-row mesa__damage-input-row--effect">
-                                    <div class="mesa__effect-picker">
-                                        <select id="mesa-effect-select" aria-label="Selecionar efeito">
-                                            <option value="" selected>Nenhum Efeito Cadastrado</option>
-                                        </select>
-                                    </div>
-                                    <div class="mesa__effect-separator" aria-hidden="true"></div>
-                                    <button id="mesa-effect-add-button" class="mesa__effect-add" type="button" aria-label="Adicionar efeito" title="Adicionar efeito">
-                                        +
-                                    </button>
-                                </div>
-                            </div>
-
-                            <div id="mesa-effects-list" class="mesa__effect-list" aria-label="Efeitos aplicados"></div>
-
-                            <h2 class="mesa__damage-title">Comentários</h2>
-                            <div class="mesa__field mesa__damage-section">
-                                <textarea id="mesa-comments" rows="4" placeholder="Ex.: O personagem vai focar em fazer..."></textarea>
-                            </div>
                         </article>
 
-                        <div class="mesa__right-content" id="mesa-right-content" hidden>
-                            <div class="mesa__preview">
-                                <button class="image-maximize-btn" type="button" data-open-preview="mesa-character-image" aria-label="Maximizar imagem">⛶</button>
-                                <img id="mesa-character-image" src="" alt="Imagem do personagem" class="mesa__character-image" hidden>
-                                <img id="mesa-character-stagger-overlay" src="res/staggered.png" alt="" class="mesa__character-stagger-overlay" aria-hidden="true" hidden>
-                                <span id="mesa-image-placeholder" class="mesa__placeholder">Nenhuma imagem selecionada</span>
+                        <article id="mesa-combat-card" class="mesa__combat-card" aria-label="Efeitos e comentários">
+                            <div class="mesa__combat-tabs" role="tablist" aria-label="Painel de combate">
+                                <button id="mesa-combat-effects-tab" class="mesa__combat-tab mesa__combat-tab--active" type="button" role="tab" aria-selected="true" aria-controls="mesa-combat-effects-panel" data-mesa-combat-tab="effects">Efeitos</button>
+                                <button id="mesa-combat-descriptions-tab" class="mesa__combat-tab" type="button" role="tab" aria-selected="false" aria-controls="mesa-combat-descriptions-panel" data-mesa-combat-tab="descriptions">Comentários</button>
                             </div>
-                        </div>
+
+                            <div id="mesa-combat-effects-panel" class="mesa__combat-panel" role="tabpanel" aria-labelledby="mesa-combat-effects-tab">
+                                <div class="mesa__field mesa__damage-section">
+                                    <div class="mesa__effect-control-row">
+                                        <div class="mesa__effect-picker">
+                                            <select id="mesa-effect-select" aria-label="Selecionar efeito">
+                                                <option value="" disabled selected hidden>Selecione um efeito</option>
+                                            </select>
+                                        </div>
+                                        <div class="mesa__effect-separator" aria-hidden="true"></div>
+                                        <button id="mesa-effect-add-button" class="mesa__effect-add" type="button" aria-label="Adicionar efeito" title="Adicionar efeito">
+                                            +
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div id="mesa-effects-list" class="mesa__effect-list" aria-label="Efeitos aplicados"></div>
+                            </div>
+
+                            <div id="mesa-combat-descriptions-panel" class="mesa__combat-panel" role="tabpanel" aria-labelledby="mesa-combat-descriptions-tab" hidden>
+                                <div class="mesa__field mesa__damage-section mesa__damage-section--descriptions">
+                                    <textarea id="mesa-comments" rows="4" placeholder="Ex.: O personagem vai focar em fazer..."></textarea>
+                                </div>
+                            </div>
+                        </article>
                     </div>
 
                 </div>
@@ -517,106 +517,99 @@
                             </div>
                         </div>
 
-                        <div class="creator__field">
-                            <label for="effects-name">Nome do Efeito</label>
-                            <div class="creator__actions creator__actions--keyword-form">
-                                <input id="effects-name" type="text" autocomplete="off" placeholder="Ex.: Burn">
-                            </div>
-                        </div>
-
-                        <div class="creator__field creator__field--behavior">
-                            <label>Comportamento</label>
-                            <div class="creator__actions creator__actions--keyword-form creator__behavior-options" role="radiogroup" aria-label="Selecionar comportamento do efeito">
-                                <label class="creator__behavior-option">
-                                    <input type="radio" name="effects-behavior" value="standard" checked>
-                                    <span>Padrão</span>
-                                </label>
-                                <label class="creator__behavior-option">
-                                    <input type="radio" name="effects-behavior" value="modifier">
-                                    <span>Modificador</span>
-                                </label>
-                            </div>
-                        </div>
-
-                        <div id="effects-modifier-how-field" class="creator__field" hidden>
-                            <label for="effects-modifier-how">Funcionalidade</label>
-                            <div class="creator__actions creator__actions--keyword-form">
-                                <select id="effects-modifier-how" aria-label="Selecionar funcionalidade do modificador">
-                                    <option value="reduce" selected>Reduz</option>
-                                    <option value="increase">Aumenta</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div id="effects-modifier-properties-field" class="creator__field" hidden>
-                            <label for="effects-modifier-properties">Tipo</label>
-                            <div class="creator__actions creator__actions--keyword-form">
-                                <select id="effects-modifier-properties" aria-label="Selecionar tipo do modificador">
-                                    <option value="power">Potência</option>
-                                    <option value="power-and-count" selected>Potência e Count</option>
-                                </select>
+                        <div class="creator__field creator__field--effect-name">
+                            <div class="creator__actions creator__actions--keyword-form creator__actions--effect-name">
+                                <div class="effects__name-field">
+                                    <label for="effects-name">Nome do Efeito</label>
+                                    <input id="effects-name" type="text" autocomplete="off" placeholder="Ex.: Burn">
+                                </div>
+                                <div class="effects__mode-field">
+                                    <span class="effects__mode-label">Modo</span>
+                                    <div class="effects__property-selector" role="radiogroup" aria-label="Tipo de efeito">
+                                        <label class="effects__property-option">
+                                            <input type="radio" name="effects-properties-mode" value="power" checked>
+                                            <span>Potency</span>
+                                        </label>
+                                        <label class="effects__property-option">
+                                            <input type="radio" name="effects-properties-mode" value="power-and-count">
+                                            <span>Potency &amp; Count</span>
+                                        </label>
+                                        <label class="effects__property-option">
+                                            <input type="radio" name="effects-properties-mode" value="modifier">
+                                            <span>Modificador</span>
+                                        </label>
+                                        <label class="effects__property-option">
+                                            <input type="radio" name="effects-properties-mode" value="description">
+                                            <span>Description</span>
+                                        </label>
+                                    </div>
+                                    <div id="effects-description-value-field" class="effects__description-value-field" hidden>
+                                        <label class="effects__description-value-option">
+                                            <input id="effects-description-value" type="checkbox">
+                                            <span>Valor</span>
+                                        </label>
+                                    </div>
+                                    <div id="effects-modifier-how-field" class="effects__modifier-how-field" hidden>
+                                        <label for="effects-modifier-how">Função</label>
+                                        <div class="creator__actions creator__actions--keyword-form">
+                                            <select id="effects-modifier-how" aria-label="Selecionar função do modificador">
+                                                <option value="reduce" selected>Reduzir Dano</option>
+                                                <option value="increase">Aumentar Dano</option>
+                                                <option value="reducao">Redução</option>
+                                            </select>
+                                        </div>
+                                        <div class="creator__actions creator__actions--keyword-form">
+                                            <label class="effects__preserve-count">
+                                                <input id="effects-preserve-count" type="checkbox">
+                                                <span>Preservar Count (não reduzir contagem em combate)</span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
                         <div id="effects-standard-fields">
+                            <div class="effects__row">
+                                <div class="creator__field">
+                                    <label for="effects-how">Função</label>
+                                    <div class="creator__actions creator__actions--keyword-form">
+                                        <select id="effects-how" aria-label="Selecionar função do efeito">
+                                            <option value="increase" selected>Aumentar</option>
+                                            <option value="reduce">Reduzir</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="creator__field">
+                                    <label for="effects-target">Afeta</label>
+                                    <div class="creator__actions creator__actions--keyword-form">
+                                        <div class="effects-target-select-row">
+                                            <select id="effects-target" aria-label="Selecionar alvo do efeito">
+                                                <option value="life">Vida</option>
+                                                <option value="stagger">Stagger</option>
+                                                <option value="speed">Speed</option>
+                                                <option value="ca">CA</option>
+                                                <option value="movement">Deslocamento</option>
+                                            </select>
+                                            <button id="effects-target-add" type="button">Adicionar</button>
+                                        </div>
+                                        
+                                    </div>
+                                </div>
+                            </div>
+                            
                             <div class="creator__field">
-                                <label for="effects-target">Afeta</label>
-                                <div class="creator__actions creator__actions--keyword-form">
-                                    <select id="effects-target" aria-label="Selecionar alvo do efeito">
-                                        <option value="life" selected>Vida</option>
-                                        <option value="stagger">Stagger</option>
-                                        <option value="life-and-stagger">Vida e Stagger</option>
-                                        <option value="speed">Speed</option>
-                                        <option value="ca">CA</option>
-                                        <option value="none">Nada</option>
-                                    </select>
+                                <div class="creator__actions">
+                                    <div id="effects-target-list" class="effects-target-list creator__keyword-list" aria-live="polite"></div>
                                 </div>
                             </div>
+                        </div>
 
-                            <div id="effects-how-field" class="creator__field">
-                                <label for="effects-how">Funcionalidade</label>
-                                <div class="creator__actions creator__actions--keyword-form">
-                                    <select id="effects-how" aria-label="Selecionar funcionalidade do efeito">
-                                        <option value="reduce" selected>Reduz</option>
-                                        <option value="increase">Aumenta</option>
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div class="creator__field">
-                                <label for="effects-properties">Tipo</label>
-                                <div class="creator__actions creator__actions--keyword-form">
-                                    <select id="effects-properties" aria-label="Selecionar opções do efeito">
-                                        <option value="power">Potência</option>
-                                        <option value="power-and-count" selected>Potência e Count</option>
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div class="creator__field">
-                                <label for="effects-activation">Funcionamento</label>
-                                <div class="creator__actions creator__actions--keyword-form">
-                                    <select id="effects-activation" aria-label="Selecionar funcionamento do efeito">
-                                        <option value="manual" selected>Manual</option>
-                                        <option value="modifier">Ativação</option>
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div id="effects-modifier-definition-field" class="creator__field" hidden>
-                                <label for="effects-modifier-definition">Definição da Ativação</label>
-                                <div class="creator__actions creator__actions--keyword-form">
-                                    <select id="effects-modifier-definition" aria-label="Selecionar definição da ativação">
-                                        <option value="attack" selected>Ataque</option>
-                                        <option value="heal">Cura</option>
-                                        <option value="attack-and-heal">Ataque e Cura</option>
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div class="creator__field">
-                                <label for="effects-description">Descrição</label>
-                                <textarea id="effects-description" rows="4" placeholder="Descreva resumidamente o que o efeito faz..."></textarea>
+                        <div class="creator__field">
+                            <label for="effects-description">Descrição</label>
+                            <div class="creator__actions">
+                                <textarea id="effects-description" placeholder="Descreva o efeito (opcional)" rows="3"></textarea>
                             </div>
                         </div>
 
