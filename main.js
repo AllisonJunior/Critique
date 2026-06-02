@@ -110,6 +110,7 @@ const mesaCombatEffectsPanel = document.getElementById('mesa-combat-effects-pane
 const mesaCombatDescriptionsPanel = document.getElementById('mesa-combat-descriptions-panel');
 const mesaCombatSinsPanel = document.getElementById('mesa-combat-sins-panel');
 const mesaCommentsInput = document.getElementById('mesa-comments');
+const mesaMpInput = document.getElementById('mesa-mp-value');
 const captionModal = document.getElementById('caption-modal');
 const captionTitle = document.getElementById('caption-title');
 const captionMessage = document.getElementById('caption-message');
@@ -454,13 +455,188 @@ function doesModifierDefinitionMatchAction(modifierDefinition, action) {
 	return false;
 }
 
-function normalizeNonNegativeIntOrDefault(value, defaultValue) {
-	const parsedValue = Number.parseInt(String(value), 10);
-	if (!Number.isFinite(parsedValue) || parsedValue < 0) {
+function parseMesaArithmeticExpression(rawValue) {
+	const expression = String(rawValue ?? '').replace(/,/g, '.').trim();
+	if (!expression) {
+		return null;
+	}
+
+	if (!/^[0-9+\-*/().\s.]+$/.test(expression)) {
+		return null;
+	}
+
+	let index = 0;
+
+	const skipWhitespace = () => {
+		while (index < expression.length && /\s/.test(expression[index])) {
+			index += 1;
+		}
+	};
+
+	const parseNumber = () => {
+		skipWhitespace();
+		const startIndex = index;
+		let sawDigit = false;
+		let sawDecimalPoint = false;
+
+		while (index < expression.length) {
+			const char = expression[index];
+			if (char >= '0' && char <= '9') {
+				sawDigit = true;
+				index += 1;
+				continue;
+			}
+
+			if (char === '.' && !sawDecimalPoint) {
+				sawDecimalPoint = true;
+				index += 1;
+				continue;
+			}
+
+			break;
+		}
+
+		if (!sawDigit) {
+			return null;
+		}
+
+		const parsedNumber = Number.parseFloat(expression.slice(startIndex, index));
+		return Number.isFinite(parsedNumber) ? parsedNumber : null;
+	};
+
+	const parseFactor = () => {
+		skipWhitespace();
+		const currentChar = expression[index];
+
+		if (currentChar === '+' || currentChar === '-') {
+			index += 1;
+			const factor = parseFactor();
+			if (factor === null) {
+				return null;
+			}
+
+			return currentChar === '-' ? -factor : factor;
+		}
+
+		if (currentChar === '(') {
+			index += 1;
+			const innerValue = parseExpression();
+			skipWhitespace();
+			if (expression[index] !== ')') {
+				return null;
+			}
+
+			index += 1;
+			return innerValue;
+		}
+
+		return parseNumber();
+	};
+
+	const parseTerm = () => {
+		let value = parseFactor();
+		if (value === null) {
+			return null;
+		}
+
+		while (true) {
+			skipWhitespace();
+			const operator = expression[index];
+			if (operator !== '*' && operator !== '/') {
+				break;
+			}
+
+			index += 1;
+			const nextValue = parseFactor();
+			if (nextValue === null) {
+				return null;
+			}
+
+			value = operator === '*' ? value * nextValue : value / nextValue;
+			if (!Number.isFinite(value)) {
+				return null;
+			}
+		}
+
+		return value;
+	};
+
+	const parseExpression = () => {
+		let value = parseTerm();
+		if (value === null) {
+			return null;
+		}
+
+		while (true) {
+			skipWhitespace();
+			const operator = expression[index];
+			if (operator !== '+' && operator !== '-') {
+				break;
+			}
+
+			index += 1;
+			const nextValue = parseTerm();
+			if (nextValue === null) {
+				return null;
+			}
+
+			value = operator === '+' ? value + nextValue : value - nextValue;
+			if (!Number.isFinite(value)) {
+				return null;
+			}
+		}
+
+		return value;
+	};
+
+	const result = parseExpression();
+	skipWhitespace();
+	if (result === null || index !== expression.length) {
+		return null;
+	}
+
+	return result;
+}
+
+function normalizeMesaCalculatedIntegerValue(value, defaultValue = 0) {
+	const parsedValue = parseMesaArithmeticExpression(value);
+	if (parsedValue === null) {
 		return defaultValue;
 	}
 
-	return parsedValue;
+	const roundedValue = Math.round(parsedValue);
+	if (!Number.isFinite(roundedValue)) {
+		return defaultValue;
+	}
+
+	return Math.max(0, roundedValue);
+}
+
+function commitMesaCalculatedInputValue(inputElement, { dispatchInput = false } = {}) {
+	const resolvedValue = resolveMesaCalculatedInputValue(inputElement?.value);
+	if (resolvedValue === null) {
+		return null;
+	}
+
+	inputElement.value = String(resolvedValue);
+	if (dispatchInput) {
+		inputElement.dispatchEvent(new Event('input', { bubbles: true }));
+	}
+
+	return resolvedValue;
+}
+
+function resolveMesaCalculatedInputValue(value) {
+	const parsedValue = parseMesaArithmeticExpression(value);
+	if (parsedValue === null) {
+		return null;
+	}
+
+	return Math.max(0, Math.round(parsedValue));
+}
+
+function normalizeNonNegativeIntOrDefault(value, defaultValue) {
+	return normalizeMesaCalculatedIntegerValue(value, defaultValue);
 }
 
 function normalizeEffectName(value) {
@@ -2421,12 +2597,7 @@ async function deleteKeyword(keywordToDelete) {
 }
 
 function parseNonNegativeInt(value) {
-	const parsedValue = Number.parseInt(String(value), 10);
-	if (!Number.isFinite(parsedValue) || parsedValue < 0) {
-		return 0;
-	}
-
-	return parsedValue;
+	return normalizeMesaCalculatedIntegerValue(value, 0);
 }
 
 function getCharacterKey(characterName) {
@@ -2464,6 +2635,7 @@ function createDefaultMesaStateEntry(character) {
 		caValue: getDefaultMesaCaFieldValue(character),
 		movementValue: getDefaultMesaMovementFieldValue(character),
 		comments: '',
+		mpValue: '',
 		combatTab: 'effects',
 		staggerDamageActive: false,
 		sins: getDefaultMesaSinValues()
@@ -2509,13 +2681,14 @@ function getMesaStateEntry(character, mesaState) {
 		caValue: typeof rawEntry.caValue === 'string' ? rawEntry.caValue : getDefaultMesaCaFieldValue(character),
 		movementValue: typeof rawEntry.movementValue === 'string' ? rawEntry.movementValue : getDefaultMesaMovementFieldValue(character),
 		comments: String(rawEntry.comments ?? rawEntry.observacoes ?? rawEntry.comment ?? '').trim(),
+		mpValue: String(rawEntry.mpValue ?? rawEntry.mp ?? '').trim(),
 		combatTab: MESA_COMBAT_TABS.has(String(rawEntry.combatTab ?? '').trim().toLowerCase()) ? String(rawEntry.combatTab).trim().toLowerCase() : 'effects',
 		staggerDamageActive: Boolean(rawEntry.staggerDamageActive ?? rawEntry.staggerActive ?? false),
 		sins
 	};
 }
 
-function setMesaStateEntry(character, mesaState, nextLife, nextStagger, nextEffects, nextSpeedValue, nextCaValue, nextMovementValue, nextStaggerDamageActive, nextComments, nextCombatTab, nextShieldValue, nextSinsValues) {
+function setMesaStateEntry(character, mesaState, nextLife, nextStagger, nextEffects, nextSpeedValue, nextCaValue, nextMovementValue, nextStaggerDamageActive, nextComments, nextCombatTab, nextShieldValue, nextSinsValues, nextMpValue) {
 	const maxLife = getCharacterMaxLife(character);
 	const maxStagger = getCharacterMaxStagger(character);
 	const key = getCharacterKey(character.nome);
@@ -2541,6 +2714,9 @@ function setMesaStateEntry(character, mesaState, nextLife, nextStagger, nextEffe
 	const comments = nextComments === undefined
 		? currentEntry.comments
 		: String(nextComments ?? '').trim();
+	const mpValue = nextMpValue === undefined
+		? currentEntry.mpValue
+		: String(nextMpValue ?? '').trim();
 	const combatTab = nextCombatTab === undefined
 		? currentEntry.combatTab
 		: (MESA_COMBAT_TABS.has(String(nextCombatTab ?? '').trim().toLowerCase()) ? String(nextCombatTab).trim().toLowerCase() : 'effects');
@@ -2560,6 +2736,7 @@ function setMesaStateEntry(character, mesaState, nextLife, nextStagger, nextEffe
 		&& movementValue === defaultMovementValue
 		&& shieldValue === 0
 		&& !comments
+		&& !mpValue
 		&& combatTab === 'effects'
 		&& !staggerDamageActive
 		&& Object.values(sins).every((value) => value === 0)
@@ -2577,6 +2754,7 @@ function setMesaStateEntry(character, mesaState, nextLife, nextStagger, nextEffe
 		caValue,
 		movementValue,
 		comments,
+		mpValue,
 		combatTab,
 		staggerDamageActive,
 		sins
@@ -3073,7 +3251,7 @@ function renderMesaEffects(selectedCharacter, mesaState) {
 				<div class="mesa__effect-controls mesa__effect-controls--modifier">
 					<label class="mesa__effect-field mesa__effect-potency-inline">
 						<span class="mesa__effect-field-label">Potência</span>
-						<input class="mesa__effect-input mesa__effect-input--compact" type="number" min="1" max="10" step="1" value="${effect.power}" data-mesa-effect-field="power" data-mesa-effect-instance="${effect.instanceId}">
+						<input class="mesa__effect-input mesa__effect-input--compact" type="text" value="${effect.power}" data-mesa-effect-field="power" data-mesa-effect-instance="${effect.instanceId}">
 					</label>
 					<div class="mesa__effect-actions mesa__effect-actions--modifier">
 						<label class="mesa__effect-modifier-toggle">
@@ -3116,12 +3294,12 @@ function renderMesaEffects(selectedCharacter, mesaState) {
 					<div class="mesa__effect-power-inline-row">
 						<label class="mesa__effect-field mesa__effect-potency-inline">
 							<span class="mesa__effect-field-label">Potência</span>
-							<input class="mesa__effect-input mesa__effect-input--compact" type="number"${powerMinAttribute}${powerMaxAttribute} step="1" value="${effect.power}" data-mesa-effect-field="power" data-mesa-effect-instance="${effect.instanceId}">
+							<input class="mesa__effect-input mesa__effect-input--compact" type="text" value="${effect.power}" data-mesa-effect-field="power" data-mesa-effect-instance="${effect.instanceId}">
 						</label>
 						<button class="mesa__effect-apply mesa__effect-apply--primary" type="button" data-mesa-effect-apply="${effect.instanceId}">Ativar Efeito</button>
 						<label class="mesa__effect-power-inline mesa__effect-power-adjustment-inline">
 							<span class="mesa__effect-field-label">Aumentar / Diminuir</span>
-							<input class="mesa__effect-input mesa__effect-input--compact" type="number"${powerMinAttribute}${powerMaxAttribute} step="1" value="${adjustmentValues.power}" aria-label="Ajuste de potência" data-mesa-effect-adjustment-field="power" data-mesa-effect-instance="${effect.instanceId}">
+							<input class="mesa__effect-input mesa__effect-input--compact" type="text" value="${adjustmentValues.power}" aria-label="Ajuste de potência" data-mesa-effect-adjustment-field="power" data-mesa-effect-instance="${effect.instanceId}">
 						</label>
 						<div class="mesa__effect-power-stepper" aria-label="Ajustar potência">
 							<button class="mesa__effect-step-btn" type="button" data-mesa-effect-increase="${effect.instanceId}" data-mesa-effect-increase-field="power" aria-label="Aumentar potência" title="Aumentar potência">+</button>
@@ -3139,7 +3317,7 @@ function renderMesaEffects(selectedCharacter, mesaState) {
 					` : ''}
 					<label class="mesa__effect-field">
 						<span class="mesa__effect-field-label">Potência</span>
-						<input class="mesa__effect-input" type="number"${powerMinAttribute}${powerMaxAttribute} step="1" value="${effect.power}" data-mesa-effect-field="power" data-mesa-effect-instance="${effect.instanceId}">
+						<input class="mesa__effect-input" type="text" value="${effect.power}" data-mesa-effect-field="power" data-mesa-effect-instance="${effect.instanceId}">
 					</label>
 					`}
 					${isPowerOnlyEffect ? '' : `
@@ -3151,7 +3329,7 @@ function renderMesaEffects(selectedCharacter, mesaState) {
 								<span>Fixar</span>
 							</label>
 						</div>
-						<input class="mesa__effect-input" type="number" min="0" step="1" value="${effect.count}" data-mesa-effect-field="count" data-mesa-effect-instance="${effect.instanceId}">
+						<input class="mesa__effect-input" type="text" value="${effect.count}" data-mesa-effect-field="count" data-mesa-effect-instance="${effect.instanceId}">
 					</div>
 					`}
 					${isPowerOnlyEffect ? '' : `${hasTrigger ? `<button class="mesa__effect-apply mesa__effect-apply--primary" type="button" data-mesa-effect-apply="${effect.instanceId}"${effect.count <= 0 ? ' disabled' : ''}>Ativar Efeito</button>` : ''}`}
@@ -3169,7 +3347,7 @@ function renderMesaEffects(selectedCharacter, mesaState) {
 					<div class="mesa__effect-adjustment mesa__effect-adjustment--compact">
 						<label class="mesa__effect-power-inline mesa__effect-power-adjustment-inline">
 							<span class="mesa__effect-field-label">Aumentar / Diminuir Potência</span>
-							<input class="mesa__effect-input mesa__effect-input--compact" type="number"${powerMinAttribute}${powerMaxAttribute} step="1" value="${adjustmentValues.power}" aria-label="Ajuste de potência" data-mesa-effect-adjustment-field="power" data-mesa-effect-instance="${effect.instanceId}">
+							<input class="mesa__effect-input mesa__effect-input--compact" type="text" value="${adjustmentValues.power}" aria-label="Ajuste de potência" data-mesa-effect-adjustment-field="power" data-mesa-effect-instance="${effect.instanceId}">
 						</label>
 						<div class="mesa__effect-power-stepper" aria-label="Ajustar potência">
 							<button class="mesa__effect-step-btn" type="button" data-mesa-effect-increase="${effect.instanceId}" data-mesa-effect-increase-field="power" aria-label="Aumentar potência" title="Aumentar potência">+</button>
@@ -3179,7 +3357,7 @@ function renderMesaEffects(selectedCharacter, mesaState) {
 					<div class="mesa__effect-adjustment mesa__effect-adjustment--compact">
 						<label class="mesa__effect-power-inline mesa__effect-power-adjustment-inline">
 							<span class="mesa__effect-field-label">Aumentar / Diminuir Count</span>
-							<input class="mesa__effect-input mesa__effect-input--compact" type="number" min="0" step="1" value="${adjustmentValues.count}" aria-label="Ajuste de count" data-mesa-effect-adjustment-field="count" data-mesa-effect-instance="${effect.instanceId}">
+							<input class="mesa__effect-input mesa__effect-input--compact" type="text" value="${adjustmentValues.count}" aria-label="Ajuste de count" data-mesa-effect-adjustment-field="count" data-mesa-effect-instance="${effect.instanceId}">
 						</label>
 						<div class="mesa__effect-power-stepper" aria-label="Ajustar count">
 							<button class="mesa__effect-step-btn" type="button" data-mesa-effect-increase="${effect.instanceId}" data-mesa-effect-increase-field="count" aria-label="Aumentar count" title="Aumentar count">+</button>
@@ -4469,6 +4647,9 @@ function renderMesaStatus() {
 	if (mesaCommentsInput instanceof HTMLTextAreaElement) {
 		mesaCommentsInput.value = currentEntry.comments || '';
 	}
+	if (mesaMpInput instanceof HTMLInputElement) {
+		mesaMpInput.value = currentEntry.mpValue || '';
+	}
 	for (const sinField of MESA_SIN_FIELDS) {
 		const sinInput = mesaSinInputs[sinField.key];
 		if (sinInput instanceof HTMLInputElement) {
@@ -5246,9 +5427,86 @@ mesaCommentsInput?.addEventListener('input', () => {
 		currentEntry.movementValue,
 		currentEntry.staggerDamageActive,
 		mesaCommentsInput.value,
-		currentEntry.combatTab
+		currentEntry.combatTab,
+		undefined,
+		currentEntry.sins,
+		mesaMpInput instanceof HTMLInputElement ? mesaMpInput.value : currentEntry.mpValue
 	);
 	writeMesaState(mesaState);
+});
+
+mesaMpInput?.addEventListener('input', () => {
+	const selectedCharacter = getSelectedMesaCharacter();
+	if (!selectedCharacter) {
+		return;
+	}
+
+	const mesaState = readMesaState();
+	const currentEntry = getMesaStateEntry(selectedCharacter, mesaState);
+	setMesaStateEntry(
+		selectedCharacter,
+		mesaState,
+		currentEntry.life,
+		currentEntry.stagger,
+		currentEntry.effects,
+		currentEntry.speedValue,
+		currentEntry.caValue,
+		currentEntry.movementValue,
+		currentEntry.staggerDamageActive,
+		currentEntry.comments,
+		currentEntry.combatTab,
+		undefined,
+		currentEntry.sins,
+		mesaMpInput.value
+	);
+	writeMesaState(mesaState);
+});
+
+mesaMpInput?.addEventListener('keydown', (event) => {
+	if (event.key !== 'Enter') {
+		return;
+	}
+
+	event.preventDefault();
+	if (commitMesaCalculatedInputValue(mesaMpInput, { dispatchInput: true }) === null) {
+		return;
+	}
+});
+
+for (const sinField of MESA_SIN_FIELDS) {
+	const sinInput = mesaSinInputs[sinField.key];
+	if (sinInput instanceof HTMLInputElement) {
+		sinInput.addEventListener('keydown', (event) => {
+			if (event.key !== 'Enter') {
+				return;
+			}
+
+			event.preventDefault();
+			if (commitMesaCalculatedInputValue(sinInput, { dispatchInput: true }) === null) {
+				return;
+			}
+		});
+	}
+}
+
+mesaEffectsList?.addEventListener('keydown', (event) => {
+	const target = event.target;
+	if (!(target instanceof HTMLInputElement) || event.key !== 'Enter') {
+		return;
+	}
+
+	const isMesaEffectNumericField = Boolean(
+		target.dataset.mesaEffectField
+		|| target.dataset.mesaEffectAdjustmentField
+		|| target.dataset.mesaEffectIncreaseField
+		|| target.dataset.mesaEffectDecreaseField
+	);
+	if (!isMesaEffectNumericField) {
+		return;
+	}
+
+	event.preventDefault();
+	commitMesaCalculatedInputValue(target, { dispatchInput: true });
 });
 
 createKeywordAddButton?.addEventListener('click', () => {
@@ -5377,6 +5635,7 @@ mesaDamageInput?.addEventListener('keydown', (event) => {
 	}
 
 	event.preventDefault();
+	commitMesaCalculatedInputValue(mesaDamageInput);
 	applyMesaDamage();
 });
 
@@ -5386,6 +5645,7 @@ mesaHealInput?.addEventListener('keydown', (event) => {
 	}
 
 	event.preventDefault();
+	commitMesaCalculatedInputValue(mesaHealInput);
 	applyMesaHeal();
 });
 

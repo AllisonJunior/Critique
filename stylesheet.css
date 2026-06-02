@@ -2338,12 +2338,21 @@ body:has(#inicio.panel--active)
     box-sizing: border-box;
 }
 
+.mesa__combat-header
+{
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px;
+    align-items: center;
+}
+
 .mesa__combat-tabs
 {
     display: flex;
     align-items: center;
     gap: 8px;
     flex-wrap: wrap;
+    min-width: 0;
 }
 
 .mesa__combat-tab
@@ -2379,6 +2388,54 @@ body:has(#inicio.panel--active)
     box-shadow: 0 8px 18px rgba(16, 20, 24, 0.16);
 }
 
+.mesa__combat-mp-field
+{
+    display: flex;
+    align-items: center;
+    flex-wrap: nowrap;
+    gap: 8px;
+    padding: 8px 10px;
+    border-radius: 12px;
+    border: 1px solid rgba(16, 20, 24, 0.14);
+    background: rgba(255, 255, 255, 0.72);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75);
+    justify-self: end;
+    width: fit-content;
+    min-width: 124px;
+    max-width: 160px;
+    box-sizing: border-box;
+}
+
+.mesa__combat-mp-field label
+{
+    font-size: 13px;
+    font-weight: 800;
+    color: #101418;
+    white-space: nowrap;
+}
+
+.mesa__combat-mp-input
+{
+    width: 68px;
+    min-height: 40px;
+    border-radius: 10px;
+    border: 1px solid rgba(16, 20, 24, 0.16);
+    background: #ffffff;
+    color: #101418;
+    font: inherit;
+    font-weight: 700;
+    padding: 0 12px;
+    text-align: center;
+    flex: 0 0 auto;
+    box-sizing: border-box;
+}
+
+.mesa__combat-mp-field:focus-within
+{
+    border-color: rgba(16, 20, 24, 0.28);
+    box-shadow: 0 0 0 3px rgba(16, 20, 24, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.75);
+}
+
 .mesa__combat-panel
 {
     display: grid;
@@ -2400,14 +2457,16 @@ body:has(#inicio.panel--active)
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
     gap: 10px;
+    align-content: start;
+    justify-content: stretch;
 }
 
 .mesa__sin-card
 {
     display: grid;
     justify-items: center;
-    gap: 8px;
-    padding: 12px 10px 10px;
+    gap: 6px;
+    padding: 10px 12px 10px;
     border-radius: 14px;
     border: 1px solid rgba(16, 20, 24, 0.14);
     background: linear-gradient(180deg, #fbfcfd 0%, #f2f5f8 100%);
@@ -2440,7 +2499,7 @@ body:has(#inicio.panel--active)
     min-height: 40px;
     border-radius: 12px;
     border: 1px solid rgba(16, 20, 24, 0.16);
-    padding: 0 12px;
+    padding: 0 10px 0 12px;
     background: #ffffff;
     color: #101418;
     font: inherit;
@@ -2448,7 +2507,8 @@ body:has(#inicio.panel--active)
     text-align: center;
     appearance: textfield;
     -moz-appearance: textfield;
-    max-width: 80px;
+    max-width: 86px;
+    box-sizing: border-box;
 }
 
 .mesa__sin-input::-webkit-outer-spin-button,
@@ -3851,6 +3911,18 @@ body:has(#inicio.panel--active)
     .mesa__combat-card
     {
         gap: 12px;
+    }
+
+    .mesa__combat-header
+    {
+        grid-template-columns: 1fr;
+    }
+
+    .mesa__combat-mp-field
+    {
+        justify-self: stretch;
+        max-width: none;
+        width: 100%;
     }
 
     .mesa__right-content

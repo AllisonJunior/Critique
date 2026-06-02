@@ -418,7 +418,7 @@
                             </div>
                             <div class="mesa__field mesa__damage-section mesa__damage-section--type">
                                 <div class="mesa__damage-main-row">
-                                    <input id="mesa-damage" type="number" min="0" placeholder="Ex.: 150">
+                                    <input id="mesa-damage" type="text" placeholder="Ex.: 150">
                                     <button id="mesa-attack-button" class="mesa__damage-attack" type="button" aria-label="Aplicar dano" title="Aplicar dano ao personagem selecionado">
                                         <img src="res/attack.png" alt="" aria-hidden="true">
                                     </button>
@@ -446,7 +446,7 @@
                             </div>
                             <div class="mesa__field mesa__damage-section mesa__damage-section--heal">
                                 <div class="mesa__damage-main-row">
-                                    <input id="mesa-heal" type="number" min="0" placeholder="Ex.: 150">
+                                    <input id="mesa-heal" type="text" placeholder="Ex.: 150">
                                     <button id="mesa-heal-button" class="mesa__damage-attack" type="button" aria-label="Aplicar cura" title="Aplicar cura ao personagem selecionado">
                                         <img src="res/hp_heal.png" alt="" aria-hidden="true">
                                     </button>
@@ -458,10 +458,17 @@
                         </article>
 
                         <article id="mesa-combat-card" class="mesa__combat-card" aria-label="Efeitos, comentários e Sin's">
-                            <div class="mesa__combat-tabs" role="tablist" aria-label="Painel de combate">
-                                <button id="mesa-combat-effects-tab" class="mesa__combat-tab mesa__combat-tab--active" type="button" role="tab" aria-selected="true" aria-controls="mesa-combat-effects-panel" data-mesa-combat-tab="effects">Efeitos</button>
-                                <button id="mesa-combat-descriptions-tab" class="mesa__combat-tab" type="button" role="tab" aria-selected="false" aria-controls="mesa-combat-descriptions-panel" data-mesa-combat-tab="descriptions">Comentários</button>
-                                <button id="mesa-combat-sins-tab" class="mesa__combat-tab" type="button" role="tab" aria-selected="false" aria-controls="mesa-combat-sins-panel" data-mesa-combat-tab="sins">Sin's</button>
+                            <div class="mesa__combat-header">
+                                <div class="mesa__combat-tabs" role="tablist" aria-label="Painel de combate">
+                                    <button id="mesa-combat-effects-tab" class="mesa__combat-tab mesa__combat-tab--active" type="button" role="tab" aria-selected="true" aria-controls="mesa-combat-effects-panel" data-mesa-combat-tab="effects">Efeitos</button>
+                                    <button id="mesa-combat-descriptions-tab" class="mesa__combat-tab" type="button" role="tab" aria-selected="false" aria-controls="mesa-combat-descriptions-panel" data-mesa-combat-tab="descriptions">Comentários</button>
+                                    <button id="mesa-combat-sins-tab" class="mesa__combat-tab" type="button" role="tab" aria-selected="false" aria-controls="mesa-combat-sins-panel" data-mesa-combat-tab="sins">Sin's</button>
+                                </div>
+
+                                <div class="mesa__combat-mp-field">
+                                    <label for="mesa-mp-value">Mp</label>
+                                    <input id="mesa-mp-value" class="mesa__combat-mp-input" type="text" placeholder="Ex.: 100" aria-label="Campo de Mp" title="Campo de Mp">
+                                </div>
                             </div>
 
                             <div id="mesa-combat-effects-panel" class="mesa__combat-panel" role="tabpanel" aria-labelledby="mesa-combat-effects-tab">
@@ -494,37 +501,37 @@
                                         <label class="mesa__sin-card" for="mesa-sin-pride">
                                             <img src="res/sins/pride.png" alt="" class="mesa__sin-icon" aria-hidden="true">
                                             <span class="mesa__sin-label">Pride</span>
-                                            <input id="mesa-sin-pride" class="mesa__sin-input" type="number" min="0" step="1" value="0" inputmode="numeric" aria-label="Valor de Pride">
+                                            <input id="mesa-sin-pride" class="mesa__sin-input" type="text" value="0" aria-label="Valor de Pride">
                                         </label>
                                         <label class="mesa__sin-card" for="mesa-sin-envy">
                                             <img src="res/sins/envy.png" alt="" class="mesa__sin-icon" aria-hidden="true">
                                             <span class="mesa__sin-label">Envy</span>
-                                            <input id="mesa-sin-envy" class="mesa__sin-input" type="number" min="0" step="1" value="0" inputmode="numeric" aria-label="Valor de Envy">
+                                            <input id="mesa-sin-envy" class="mesa__sin-input" type="text" value="0" aria-label="Valor de Envy">
                                         </label>
                                         <label class="mesa__sin-card" for="mesa-sin-wrath">
                                             <img src="res/sins/wrath.png" alt="" class="mesa__sin-icon" aria-hidden="true">
                                             <span class="mesa__sin-label">Wrath</span>
-                                            <input id="mesa-sin-wrath" class="mesa__sin-input" type="number" min="0" step="1" value="0" inputmode="numeric" aria-label="Valor de Wrath">
+                                            <input id="mesa-sin-wrath" class="mesa__sin-input" type="text" value="0" aria-label="Valor de Wrath">
                                         </label>
                                         <label class="mesa__sin-card" for="mesa-sin-sloth">
                                             <img src="res/sins/sloth.png" alt="" class="mesa__sin-icon" aria-hidden="true">
                                             <span class="mesa__sin-label">Sloth</span>
-                                            <input id="mesa-sin-sloth" class="mesa__sin-input" type="number" min="0" step="1" value="0" inputmode="numeric" aria-label="Valor de Sloth">
+                                            <input id="mesa-sin-sloth" class="mesa__sin-input" type="text" value="0" aria-label="Valor de Sloth">
                                         </label>
                                         <label class="mesa__sin-card" for="mesa-sin-gluttony">
                                             <img src="res/sins/gluttony.png" alt="" class="mesa__sin-icon" aria-hidden="true">
                                             <span class="mesa__sin-label">Gluttony</span>
-                                            <input id="mesa-sin-gluttony" class="mesa__sin-input" type="number" min="0" step="1" value="0" inputmode="numeric" aria-label="Valor de Gluttony">
+                                            <input id="mesa-sin-gluttony" class="mesa__sin-input" type="text" value="0" aria-label="Valor de Gluttony">
                                         </label>
                                         <label class="mesa__sin-card" for="mesa-sin-lust">
                                             <img src="res/sins/lust.png" alt="" class="mesa__sin-icon" aria-hidden="true">
                                             <span class="mesa__sin-label">Lust</span>
-                                            <input id="mesa-sin-lust" class="mesa__sin-input" type="number" min="0" step="1" value="0" inputmode="numeric" aria-label="Valor de Lust">
+                                            <input id="mesa-sin-lust" class="mesa__sin-input" type="text" value="0" aria-label="Valor de Lust">
                                         </label>
                                         <label class="mesa__sin-card" for="mesa-sin-gloom">
                                             <img src="res/sins/gloom.png" alt="" class="mesa__sin-icon" aria-hidden="true">
                                             <span class="mesa__sin-label">Gloom</span>
-                                            <input id="mesa-sin-gloom" class="mesa__sin-input" type="number" min="0" step="1" value="0" inputmode="numeric" aria-label="Valor de Gloom">
+                                            <input id="mesa-sin-gloom" class="mesa__sin-input" type="text" value="0" aria-label="Valor de Gloom">
                                         </label>
                                     </div>
                                 </div>
