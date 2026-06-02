@@ -3946,13 +3946,10 @@ function applyMesaEffect(effectInstanceId, source = 'manual', propagateEffectAct
 	const effect = currentEntry.effects[effectIndex];
 	const triggerValue = getMesaEffectTriggerValue(effect);
 	const isTriggerConfigured = Boolean(triggerValue);
-	if (isTriggerConfigured && !Boolean(effect.triggerEnabled ?? true)) {
+	if (isTriggerConfigured && !Boolean(effect.triggerEnabled ?? true) && source !== 'manual') {
 		return;
 	}
 	if (source === 'damage' && triggerValue !== 'on-hit') {
-		return;
-	}
-	if (source === 'manual' && triggerValue === 'on-hit') {
 		return;
 	}
 	const power = normalizeNonNegativeIntOrDefault(effect.power, DEFAULT_MESA_EFFECT_POWER);
