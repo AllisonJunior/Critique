@@ -25,6 +25,10 @@ const effectsTargetList = document.getElementById('effects-target-list');
 const effectsDescriptionInput = document.getElementById('effects-description');
 const effectsDescriptionValueField = document.getElementById('effects-description-value-field');
 const effectsDescriptionValueInput = document.getElementById('effects-description-value');
+const effectsTriggerField = document.getElementById('effects-trigger-field');
+const effectsTriggerSelect = document.getElementById('effects-trigger');
+const effectsTriggerAddButton = document.getElementById('effects-trigger-add');
+const effectsTriggerList = document.getElementById('effects-trigger-list');
 const effectsHowField = document.getElementById('effects-how-field');
 const effectsHowSelect = document.getElementById('effects-how');
 const effectsPropertiesSelect = document.getElementById('effects-properties');
@@ -351,6 +355,69 @@ function normalizeEffectActivation(value) {
 	return 'manual';
 }
 
+function normalizeEffectTrigger(value) {
+	const normalizedValue = String(value ?? '').trim().toLowerCase();
+	if (
+		normalizedValue === 'on-hit'
+		|| normalizedValue === 'on_hit'
+		|| normalizedValue === 'onhit'
+		|| normalizedValue === 'damage'
+		|| normalizedValue === 'apply-damage'
+		|| normalizedValue === 'apply_damage'
+		|| normalizedValue === 'aplicar-dano'
+		|| normalizedValue === 'aplicar dano'
+	) {
+		return 'on-hit';
+	}
+
+	if (
+		normalizedValue === 'effect-activation'
+		|| normalizedValue === 'effect_activation'
+		|| normalizedValue === 'on-effect-activation'
+		|| normalizedValue === 'on_effect_activation'
+		|| normalizedValue === 'on effect activation'
+	) {
+		return 'effect-activation';
+	}
+
+	return '';
+}
+
+function getEffectTriggerLabel(trigger) {
+	const normalizedTrigger = normalizeEffectTrigger(trigger);
+	if (normalizedTrigger === 'on-hit') {
+		return 'Trigger: On Hit';
+	}
+
+	if (normalizedTrigger === 'effect-activation') {
+		return 'Trigger: On Effect Activation';
+	}
+
+	return '';
+}
+
+function normalizeEffectTriggerList(value) {
+	const rawValues = Array.isArray(value) ? value : (value == null ? [] : [value]);
+	const nextValues = [];
+	rawValues.forEach((entry) => {
+		const normalizedEntry = normalizeEffectTrigger(entry);
+		if (!normalizedEntry || nextValues.includes(normalizedEntry)) {
+			return;
+		}
+
+		nextValues.push(normalizedEntry);
+	});
+	return nextValues;
+}
+
+function getMesaEffectTriggerValue(effect) {
+	if (Array.isArray(effect?.triggers) && effect.triggers.length) {
+		return normalizeEffectTrigger(effect.triggers[0]);
+	}
+
+	return normalizeEffectTrigger(effect?.trigger);
+}
+
 function normalizeEffectModifierDefinition(value) {
 	const normalizedValue = String(value ?? '').trim().toLowerCase();
 	if (
@@ -438,6 +505,9 @@ function createMesaEffectInstance(effectId) {
 		? 'power'
 		: normalizeEffectProperties(template.properties);
 	const valueEnabled = properties === 'description' && Boolean(template.valueEnabled);
+	const triggers = behavior === 'modifier' || behavior === 'amplifier'
+		? []
+		: normalizeEffectTriggerList(template.triggers ?? template.trigger);
 
 	return {
 		instanceId: `${template.id}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`,
@@ -452,6 +522,9 @@ function createMesaEffectInstance(effectId) {
 		value: '',
 		activation: behavior === 'modifier' ? 'modifier' : normalizeEffectActivation(template.activation),
 		modifierDefinition: normalizeEffectModifierDefinition(template.modifierDefinition),
+		triggers,
+		trigger: triggers[0] || '',
+		triggerEnabled: triggers.length > 0,
 		active: false,
 		preserveCount: Boolean(template.preserveCount ?? false),
 		power: DEFAULT_MESA_EFFECT_POWER,
@@ -482,6 +555,13 @@ function normalizeMesaEffect(effect, index = 0) {
 	const valueEnabled = properties === 'description'
 		? Boolean(effect.valueEnabled ?? effect.hasValue ?? effect.valor ?? template.valueEnabled ?? false)
 		: false;
+	const triggers = behavior === 'modifier' || behavior === 'amplifier'
+		? []
+		: normalizeEffectTriggerList(effect.triggers ?? effect.trigger ?? effect.activationTrigger ?? template.triggers ?? template.trigger);
+	const trigger = triggers[0] || '';
+	const triggerEnabled = triggers.length > 0
+		? Boolean(effect.triggerEnabled ?? effect.autoTriggerEnabled ?? effect.damageTriggerEnabled ?? true)
+		: false;
 
 	return {
 		instanceId: String(effect.instanceId ?? effect.instance ?? effect.key ?? `${template.id}-${index}-${power}`),
@@ -496,6 +576,9 @@ function normalizeMesaEffect(effect, index = 0) {
 		value: properties === 'description' ? String(effect.value ?? effect.valor ?? effect.text ?? '').trim() : '',
 		activation: behavior === 'modifier' ? 'modifier' : normalizeEffectActivation(effect.activation ?? template.activation),
 		modifierDefinition: normalizeEffectModifierDefinition(effect.modifierDefinition ?? template.modifierDefinition),
+		triggers,
+		trigger,
+		triggerEnabled,
 		active: Boolean(effect.active ?? effect.ativo ?? false),
 		preserveCount: Boolean(effect.preserveCount ?? effect.keepCount ?? effect.lockCount ?? effect.contagemFixa ?? false),
 		power,
@@ -1203,6 +1286,9 @@ function readStoredEffects() {
 					? 'power'
 					: (storedProperties == null ? 'power-and-count' : normalizeEffectProperties(storedProperties));
 				const valueEnabled = Boolean(effect.valueEnabled ?? effect.hasValue ?? effect.valor ?? false);
+				const triggers = behavior === 'modifier' || behavior === 'amplifier'
+					? []
+					: normalizeEffectTriggerList(effect.triggers ?? effect.trigger ?? effect.activationTrigger ?? effect.triggerMode ?? effect.trigger_mode);
 
 				return {
 					id,
@@ -1215,7 +1301,10 @@ function readStoredEffects() {
 					properties,
 					valueEnabled: properties === 'description' ? valueEnabled : false,
 					activation: normalizeEffectActivation(effect.activation ?? effect.ativacao),
-					modifierDefinition: normalizeEffectModifierDefinition(effect.modifierDefinition ?? effect.modifier_definition ?? effect.definicaoModificador)
+					modifierDefinition: normalizeEffectModifierDefinition(effect.modifierDefinition ?? effect.modifier_definition ?? effect.definicaoModificador),
+					triggers,
+					trigger: triggers[0] || '',
+					triggerEnabled: Boolean(effect.triggerEnabled ?? effect.autoTriggerEnabled ?? effect.damageTriggerEnabled ?? false)
 				};
 			})
 			.filter(Boolean);
@@ -1436,9 +1525,13 @@ function resetEffectsForm() {
 	if (effectsModifierHowSelect) {
 		effectsModifierHowSelect.value = 'reduce';
 	}
+	if (effectsTriggerSelect) {
+		effectsTriggerSelect.value = 'on-hit';
+	}
 
 	// initialize fields
 	setSelectedEffectTargets([]);
+	setSelectedEffectTriggerList([]);
 	setSelectedEffectPropertiesMode('power');
 	editingEffectId = '';
 	selectedEffectImageFile = null;
@@ -1477,6 +1570,15 @@ function setSelectedEffectPropertiesMode(value) {
 	});
 }
 
+function getSelectedEffectTrigger() {
+	return getSelectedEffectTriggerList()[0] || '';
+}
+
+function setSelectedEffectTrigger(value) {
+	const normalizedValue = normalizeEffectTrigger(value);
+	setSelectedEffectTriggerList(normalizedValue ? [normalizedValue] : []);
+}
+
 function getSelectedEffectBehavior() {
 	const selectedInput = effectsPropertiesModeInputs.find((input) => input.checked);
 	return normalizeEffectBehavior(selectedInput?.value ?? 'power');
@@ -1501,11 +1603,15 @@ function updateEffectsBehaviorState() {
 	const behavior = getSelectedEffectBehavior();
 	const shouldDisableStandardFields = behavior === 'modifier';
 	const isDescriptionMode = getSelectedEffectPropertiesMode() === 'description';
+	const shouldShowTriggerField = !shouldDisableStandardFields && !isDescriptionMode;
 	if (effectsModifierHowField) {
 		effectsModifierHowField.hidden = !shouldDisableStandardFields;
 	}
 	if (effectsModifierPropertiesField) {
 		effectsModifierPropertiesField.hidden = !shouldDisableStandardFields;
+	}
+	if (effectsTriggerField) {
+		effectsTriggerField.hidden = !shouldShowTriggerField;
 	}
 	if (effectsStandardFields) {
 		effectsStandardFields.hidden = shouldDisableStandardFields || isDescriptionMode;
@@ -1528,6 +1634,12 @@ function updateEffectsBehaviorState() {
 	}
 	if (effectsModifierDefinitionSelect) {
 		effectsModifierDefinitionSelect.disabled = shouldDisableStandardFields;
+	}
+	if (effectsTriggerSelect) {
+		effectsTriggerSelect.disabled = !shouldShowTriggerField;
+	}
+	if (effectsTriggerAddButton) {
+		effectsTriggerAddButton.disabled = !shouldShowTriggerField;
 	}
 	if (shouldDisableStandardFields) {
 		setSelectedModifierProperties('power-and-count');
@@ -1608,6 +1720,64 @@ function addTargetTag(value, label) {
 
 	chip.appendChild(removeButton);
 	effectsTargetList.appendChild(chip);
+}
+
+function addTriggerTag(value, label) {
+	if (!effectsTriggerList) return;
+
+	effectsTriggerList.innerHTML = '';
+
+	const chip = document.createElement('span');
+	chip.className = 'creator__keyword-chip';
+	chip.setAttribute('data-value', String(value));
+	chip.textContent = label;
+
+	const removeButton = document.createElement('button');
+	removeButton.type = 'button';
+	removeButton.className = 'creator__keyword-remove';
+	removeButton.setAttribute('aria-label', `Remover ${label}`);
+	removeButton.textContent = 'Ã—';
+	removeButton.addEventListener('click', () => {
+		chip.remove();
+		if (effectsTriggerSelect) {
+			effectsTriggerSelect.value = 'on-hit';
+		}
+	});
+
+	chip.appendChild(removeButton);
+	effectsTriggerList.appendChild(chip);
+}
+
+function getSelectedEffectTriggerList() {
+	if (!effectsTriggerList) {
+		return [];
+	}
+
+	return Array.from(effectsTriggerList.querySelectorAll('[data-value]')).map((el) => normalizeEffectTrigger(el.dataset.value));
+}
+
+function setSelectedEffectTriggerList(values) {
+	if (!effectsTriggerList) {
+		return;
+	}
+
+	effectsTriggerList.innerHTML = '';
+	const normalizedValues = Array.from(values || [])
+		.map((value) => normalizeEffectTrigger(value))
+		.filter(Boolean);
+	if (!normalizedValues.length) {
+		if (effectsTriggerSelect) {
+			effectsTriggerSelect.value = 'on-hit';
+		}
+		return;
+	}
+
+	const uniqueValue = normalizedValues[0];
+	const label = getEffectTriggerLabel(uniqueValue) || uniqueValue;
+	addTriggerTag(uniqueValue, label);
+	if (effectsTriggerSelect) {
+		effectsTriggerSelect.value = uniqueValue;
+	}
 }
 
 function getAllowedEffectTargetsForBehavior(behavior) {
@@ -1709,6 +1879,9 @@ function beginEditEffect(effectId) {
 			: 'reduce';
 	}
 	setSelectedEffectPropertiesMode(existingEffect.behavior === 'modifier' ? 'modifier' : existingEffect.properties);
+	setSelectedEffectTriggerList(Array.isArray(existingEffect.triggers) && existingEffect.triggers.length
+		? existingEffect.triggers
+		: (existingEffect.trigger ? [existingEffect.trigger] : []));
 
 	// populate Afeta (targets) - support new `targets` array or legacy `target` string
 	if (Array.isArray(existingEffect.targets) && existingEffect.targets.length) {
@@ -1820,6 +1993,7 @@ function renderEffectsRegistry() {
 		description.className = 'effects__item-target';
 		const behaviorNorm = normalizeEffectBehavior(effect.behavior);
 		let effectModeLabel = '';
+		const triggerLabel = getEffectTriggerLabel(getMesaEffectTriggerValue(effect));
 		if (behaviorNorm === 'reducao') {
 			effectModeLabel = 'Redução';
 		} else if (behaviorNorm === 'modifier') {
@@ -1828,9 +2002,9 @@ function renderEffectsRegistry() {
 		} else if (effect.properties === 'description') {
 			effectModeLabel = effect.valueEnabled ? 'Description + Stack' : 'Description';
 		} else if (effect.properties === 'power-and-count') {
-			effectModeLabel = 'Potency & Count';
+			effectModeLabel = triggerLabel ? `Potency & Count - ${triggerLabel}` : 'Potency & Count';
 		} else {
-			effectModeLabel = 'Potency';
+			effectModeLabel = triggerLabel ? `Potency - ${triggerLabel}` : 'Potency';
 		}
 		description.textContent = `${effectModeLabel} - ${String(effect.description ?? '').trim() || 'Sem descrição.'}`;
 
@@ -1912,6 +2086,9 @@ async function addEffect() {
 	const properties = behavior === 'modifier'
 		? 'power'
 		: getSelectedEffectPropertiesMode();
+	const selectedTrigger = properties === 'power' || properties === 'power-and-count'
+		? getSelectedEffectTrigger()
+		: '';
 	const activation = behavior === 'modifier' ? 'modifier' : 'manual';
 	const modifierDefinition = 'attack';
 	const hasDuplicateName = effectsRegistry.some((effect) => {
@@ -1954,6 +2131,9 @@ async function addEffect() {
 		how,
 		properties,
 		valueEnabled: properties === 'description' ? valueEnabled : false,
+		triggers: selectedTrigger ? [selectedTrigger] : [],
+		trigger: selectedTrigger,
+		triggerEnabled: Boolean(selectedTrigger),
 		activation,
 		modifierDefinition,
 	};
@@ -2856,6 +3036,9 @@ function renderMesaEffects(selectedCharacter, mesaState) {
 		const isPowerOnlyEffect = effect.properties === 'power';
 		const isBehaviorModifier = normalizeEffectBehavior(effect.behavior) === 'modifier';
 		const isModifierEffect = effect.activation === 'modifier' || isBehaviorModifier;
+		const triggerValue = getMesaEffectTriggerValue(effect);
+		const triggerLabel = getEffectTriggerLabel(triggerValue);
+		const hasTrigger = Boolean(triggerLabel);
 		const powerMinAttribute = isBehaviorModifier ? ' min="1"' : ' min="0"';
 		const powerMaxAttribute = isBehaviorModifier ? ' max="10"' : '';
 		const adjustmentValues = mesaEffectAdjustmentInputs[effect.instanceId] || {
@@ -2865,6 +3048,14 @@ function renderMesaEffects(selectedCharacter, mesaState) {
 			decreaseCount: 1
 		};
 		const effectDescription = String(effect.description ?? getEffectTemplate(effect.id)?.description ?? '').trim() || 'Sem descrição.';
+		const triggerRowMarkup = hasTrigger ? `
+			<div class="mesa__effect-trigger-row">
+				<label class="mesa__effect-trigger-toggle">
+					<input type="checkbox" data-mesa-effect-trigger-enabled="${effect.instanceId}"${effect.triggerEnabled ? ' checked' : ''}>
+					<span>${triggerLabel}</span>
+				</label>
+			</div>
+		` : '';
 		const effectCard = document.createElement('article');
 		effectCard.className = `mesa__effect-card mesa__effect-card--${effect.id}`;
 		effectCard.draggable = false;
@@ -2920,13 +3111,14 @@ function renderMesaEffects(selectedCharacter, mesaState) {
 				</div>
 				<p class="mesa__effect-card-detail">${effectDescription}</p>
 				<div class="mesa__effect-controls${isPowerOnlyEffect ? ' mesa__effect-controls--power-only' : ' mesa__effect-controls--counted'}">
+					${triggerRowMarkup}
 					${isPowerOnlyEffect ? `
 					<div class="mesa__effect-power-inline-row">
 						<label class="mesa__effect-field mesa__effect-potency-inline">
 							<span class="mesa__effect-field-label">Potência</span>
 							<input class="mesa__effect-input mesa__effect-input--compact" type="number"${powerMinAttribute}${powerMaxAttribute} step="1" value="${effect.power}" data-mesa-effect-field="power" data-mesa-effect-instance="${effect.instanceId}">
 						</label>
-						<button class="mesa__effect-apply mesa__effect-apply--primary" type="button" data-mesa-effect-apply="${effect.instanceId}"${effect.count <= 0 ? ' disabled' : ''}>Ativar Efeito</button>
+						<button class="mesa__effect-apply mesa__effect-apply--primary" type="button" data-mesa-effect-apply="${effect.instanceId}">Ativar Efeito</button>
 						<label class="mesa__effect-power-inline mesa__effect-power-adjustment-inline">
 							<span class="mesa__effect-field-label">Aumentar / Diminuir</span>
 							<input class="mesa__effect-input mesa__effect-input--compact" type="number"${powerMinAttribute}${powerMaxAttribute} step="1" value="${adjustmentValues.power}" aria-label="Ajuste de potência" data-mesa-effect-adjustment-field="power" data-mesa-effect-instance="${effect.instanceId}">
@@ -2937,6 +3129,14 @@ function renderMesaEffects(selectedCharacter, mesaState) {
 						</div>
 					</div>
 					` : `
+					${hasTrigger ? `
+					<div class="mesa__effect-trigger-row">
+						<label class="mesa__effect-trigger-toggle">
+							<input type="checkbox" data-mesa-effect-trigger-enabled="${effect.instanceId}"${effect.triggerEnabled ? ' checked' : ''}>
+							<span>${triggerLabel}</span>
+						</label>
+					</div>
+					` : ''}
 					<label class="mesa__effect-field">
 						<span class="mesa__effect-field-label">Potência</span>
 						<input class="mesa__effect-input" type="number"${powerMinAttribute}${powerMaxAttribute} step="1" value="${effect.power}" data-mesa-effect-field="power" data-mesa-effect-instance="${effect.instanceId}">
@@ -2954,7 +3154,7 @@ function renderMesaEffects(selectedCharacter, mesaState) {
 						<input class="mesa__effect-input" type="number" min="0" step="1" value="${effect.count}" data-mesa-effect-field="count" data-mesa-effect-instance="${effect.instanceId}">
 					</div>
 					`}
-					${isPowerOnlyEffect ? '' : `<button class="mesa__effect-apply mesa__effect-apply--primary" type="button" data-mesa-effect-apply="${effect.instanceId}"${effect.count <= 0 ? ' disabled' : ''}>Ativar Efeito</button>`}
+					${isPowerOnlyEffect ? '' : `${hasTrigger ? `<button class="mesa__effect-apply mesa__effect-apply--primary" type="button" data-mesa-effect-apply="${effect.instanceId}"${effect.count <= 0 ? ' disabled' : ''}>Ativar Efeito</button>` : ''}`}
 					<div class="mesa__effect-actions${isModifierEffect ? ' mesa__effect-actions--modifier' : ''}">
 						${isModifierEffect ? `
 						<label class="mesa__effect-modifier-toggle">
@@ -3125,6 +3325,10 @@ function updateMesaEffectInstanceField(effectInstanceId, field, value) {
 
 		if (field === 'preserveCount') {
 			return { ...effect, preserveCount: Boolean(value) };
+		}
+
+		if (field === 'triggerEnabled') {
+			return { ...effect, triggerEnabled: Boolean(value) };
 		}
 
 		if (field === 'value') {
@@ -3437,7 +3641,98 @@ function addMesaEffectToCharacter() {
 	}
 }
 
-function applyMesaEffect(effectInstanceId) {
+function activateMesaDamageTriggeredEffects() {
+	const selectedCharacter = getSelectedMesaCharacter();
+	if (!selectedCharacter || lastLoadedMesaCharacter !== selectedCharacter.nome) {
+		return false;
+	}
+
+	const mesaState = readMesaState();
+	const currentEntry = getMesaStateEntry(selectedCharacter, mesaState);
+	const triggeredEffects = currentEntry.effects.filter((effect) => {
+		if (normalizeEffectBehavior(effect.behavior) !== 'standard') {
+			return false;
+		}
+
+		if (normalizeEffectProperties(effect.properties) !== 'power' && normalizeEffectProperties(effect.properties) !== 'power-and-count') {
+			return false;
+		}
+
+		if (getMesaEffectTriggerValue(effect) !== 'on-hit') {
+			return false;
+		}
+
+		if (!Boolean(effect.triggerEnabled ?? true)) {
+			return false;
+		}
+
+		if (normalizeEffectProperties(effect.properties) === 'power-and-count' && normalizeNonNegativeIntOrDefault(effect.count, 0) <= 0) {
+			return false;
+		}
+
+		return true;
+	});
+
+	if (!triggeredEffects.length) {
+		return false;
+	}
+
+	triggeredEffects.forEach((effect) => {
+		applyMesaEffect(effect.instanceId, 'damage');
+	});
+
+	return true;
+}
+
+function activateMesaEffectActivationTriggeredEffects(sourceEffectInstanceId = '') {
+	const selectedCharacter = getSelectedMesaCharacter();
+	if (!selectedCharacter || lastLoadedMesaCharacter !== selectedCharacter.nome) {
+		return false;
+	}
+
+	const normalizedSourceEffectInstanceId = String(sourceEffectInstanceId ?? '').trim();
+	const mesaState = readMesaState();
+	const currentEntry = getMesaStateEntry(selectedCharacter, mesaState);
+	const triggeredEffects = currentEntry.effects.filter((effect) => {
+		if (normalizeEffectBehavior(effect.behavior) !== 'standard') {
+			return false;
+		}
+
+		if (normalizeEffectProperties(effect.properties) !== 'power' && normalizeEffectProperties(effect.properties) !== 'power-and-count') {
+			return false;
+		}
+
+		if (getMesaEffectTriggerValue(effect) !== 'effect-activation') {
+			return false;
+		}
+
+		if (!Boolean(effect.triggerEnabled ?? true)) {
+			return false;
+		}
+
+		if (normalizedSourceEffectInstanceId && effect.instanceId === normalizedSourceEffectInstanceId) {
+			return false;
+		}
+
+		if (normalizeEffectProperties(effect.properties) === 'power-and-count' && normalizeNonNegativeIntOrDefault(effect.count, 0) <= 0) {
+			return false;
+		}
+
+		return true;
+	});
+
+	if (!triggeredEffects.length) {
+		return false;
+	}
+
+	triggeredEffects.forEach((effect) => {
+		applyMesaEffect(effect.instanceId, 'effect-activation', false);
+	});
+
+	return true;
+}
+
+function applyMesaEffect(effectInstanceId, source = 'manual', propagateEffectActivationTriggers = true) {
 	const selectedCharacter = getSelectedMesaCharacter();
 	if (!selectedCharacter || lastLoadedMesaCharacter !== selectedCharacter.nome) {
 		return;
@@ -3452,6 +3747,17 @@ function applyMesaEffect(effectInstanceId) {
 	}
 
 	const effect = currentEntry.effects[effectIndex];
+	const triggerValue = getMesaEffectTriggerValue(effect);
+	const isTriggerConfigured = Boolean(triggerValue);
+	if (isTriggerConfigured && !Boolean(effect.triggerEnabled ?? true)) {
+		return;
+	}
+	if (source === 'damage' && triggerValue !== 'on-hit') {
+		return;
+	}
+	if (source === 'manual' && triggerValue === 'on-hit') {
+		return;
+	}
 	const power = normalizeNonNegativeIntOrDefault(effect.power, DEFAULT_MESA_EFFECT_POWER);
 	const count = normalizeNonNegativeIntOrDefault(effect.count, DEFAULT_MESA_EFFECT_COUNT);
 	const preserveCount = Boolean(effect.preserveCount);
@@ -3577,6 +3883,10 @@ function applyMesaEffect(effectInstanceId) {
 	);
 	writeMesaState(mesaState);
 	renderMesaStatus();
+
+	if (propagateEffectActivationTriggers && source !== 'effect-activation') {
+		activateMesaEffectActivationTriggeredEffects(effect.instanceId);
+	}
 }
 
 function applyMesaDamage({ staggerOnly = false, lifeOnly = false } = {}) {
@@ -3648,7 +3958,9 @@ function applyMesaDamage({ staggerOnly = false, lifeOnly = false } = {}) {
 
 	setMesaStateEntry(selectedCharacter, mesaState, nextLife, nextStagger, modifierAttackResolution.nextEffects, undefined, undefined, undefined, undefined, undefined, undefined, nextShield);
 	writeMesaState(mesaState);
-	renderMesaStatus();
+	if (!activateMesaDamageTriggeredEffects()) {
+		renderMesaStatus();
+	}
 	mesaDamageInput.value = '';
 	mesaDamageInput.focus();
 }
@@ -4608,6 +4920,16 @@ effectsTargetSelect?.addEventListener('change', () => {
 	updateEffectsHowVisibility();
 });
 
+effectsTriggerAddButton?.addEventListener('click', () => {
+	const val = normalizeEffectTrigger(effectsTriggerSelect?.value);
+	if (!val) {
+		return;
+	}
+
+	const label = getEffectTriggerLabel(val) || val;
+	addTriggerTag(val, label);
+});
+
 effectsTargetAddButton?.addEventListener('click', () => {
 	const val = effectsTargetSelect?.value;
 	if (!val) return;
@@ -4675,6 +4997,12 @@ mesaEffectsList?.addEventListener('input', (event) => {
 	const preserveCountEffectId = target.dataset.mesaEffectPreserveCount ?? '';
 	if (preserveCountEffectId) {
 		updateMesaEffectInstanceField(preserveCountEffectId, 'preserveCount', target.checked);
+		return;
+	}
+
+	const triggerEnabledEffectId = target.dataset.mesaEffectTriggerEnabled ?? '';
+	if (triggerEnabledEffectId) {
+		updateMesaEffectInstanceField(triggerEnabledEffectId, 'triggerEnabled', target.checked);
 		return;
 	}
 
@@ -5265,7 +5593,7 @@ document.addEventListener('click', (event) => {
 
 	const effectApplyButton = target.closest('[data-mesa-effect-apply]');
 	if (effectApplyButton instanceof HTMLElement) {
-		applyMesaEffect(effectApplyButton.dataset.mesaEffectApply ?? '');
+		applyMesaEffect(effectApplyButton.dataset.mesaEffectApply ?? '', 'manual');
 		return;
 	}
 

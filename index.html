@@ -392,7 +392,7 @@
                     </div>
 
                     <div id="mesa-instance-bar" class="mesa__instance-bar" aria-label="Instâncias abertas" hidden></div>
-
+                    
                     <div class="mesa__content-wrapper" id="mesa-content-wrapper" hidden>
                         <div class="mesa__left-content">
                             <article id="mesa-status" class="mesa__status" aria-live="polite"></article>
@@ -597,6 +597,19 @@
                                             <input id="effects-description-value" type="checkbox">
                                             <span>Valor</span>
                                         </label>
+                                    </div>
+                                    <div id="effects-trigger-field" class="effects__trigger-field" hidden>
+                                        <label for="effects-trigger">Trigger</label>
+                                        <div class="creator__actions creator__actions--keyword-form effects-trigger-select-row">
+                                            <select id="effects-trigger" aria-label="Selecionar trigger do efeito">
+                                                <option value="on-hit">On Hit</option>
+                                                <option value="effect-activation">On Effect Activation</option>
+                                            </select>
+                                            <button id="effects-trigger-add" type="button">Adicionar</button>
+                                        </div>
+                                        <div class="creator__actions">
+                                            <div id="effects-trigger-list" class="effects-trigger-list creator__keyword-list" aria-live="polite"></div>
+                                        </div>
                                     </div>
                                     <div id="effects-modifier-how-field" class="effects__modifier-how-field" hidden>
                                         <label for="effects-modifier-how">Função</label>
