@@ -3230,6 +3230,7 @@ function renderMesaEffects(selectedCharacter, mesaState) {
 	effects.forEach((effect) => {
 		const isDescriptionEffect = effect.properties === 'description';
 		const isPowerOnlyEffect = effect.properties === 'power';
+		const isPowerAndCountEffect = effect.properties === 'power-and-count';
 		const isBehaviorModifier = normalizeEffectBehavior(effect.behavior) === 'modifier';
 		const isModifierEffect = effect.activation === 'modifier' || isBehaviorModifier;
 		const triggerValue = getMesaEffectTriggerValue(effect);
@@ -3338,6 +3339,7 @@ function renderMesaEffects(selectedCharacter, mesaState) {
 						<input class="mesa__effect-input" type="text" value="${effect.power}" data-mesa-effect-field="power" data-mesa-effect-instance="${effect.instanceId}">
 					</label>
 					`}
+					${isPowerOnlyEffect ? '' : `${(hasTrigger || isPowerAndCountEffect) ? `<button class="mesa__effect-apply mesa__effect-apply--primary" type="button" data-mesa-effect-apply="${effect.instanceId}"${effect.count <= 0 ? ' disabled' : ''}>Ativar Efeito</button>` : ''}`}
 					${isPowerOnlyEffect ? '' : `
 					<div class="mesa__effect-field mesa__effect-count-field">
 						<div class="mesa__effect-count-header">
@@ -3350,7 +3352,6 @@ function renderMesaEffects(selectedCharacter, mesaState) {
 						<input class="mesa__effect-input" type="text" value="${effect.count}" data-mesa-effect-field="count" data-mesa-effect-instance="${effect.instanceId}">
 					</div>
 					`}
-					${isPowerOnlyEffect ? '' : `${hasTrigger ? `<button class="mesa__effect-apply mesa__effect-apply--primary" type="button" data-mesa-effect-apply="${effect.instanceId}"${effect.count <= 0 ? ' disabled' : ''}>Ativar Efeito</button>` : ''}`}
 					<div class="mesa__effect-actions${isModifierEffect ? ' mesa__effect-actions--modifier' : ''}">
 						${isModifierEffect ? `
 						<label class="mesa__effect-modifier-toggle">

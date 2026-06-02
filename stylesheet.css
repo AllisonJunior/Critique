@@ -2950,7 +2950,7 @@ body:has(#inicio.panel--active)
 }
 .mesa__effect-controls--counted
 {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto;
     column-gap: 12px;
 }
 .mesa__effect-actions
@@ -2962,6 +2962,11 @@ body:has(#inicio.panel--active)
     min-width: 0;
     width: 100%;
     justify-self: end;
+}
+
+.mesa__effect-controls--counted .mesa__effect-actions
+{
+    justify-content: flex-end;
 }
 .mesa__effect-actions--modifier
 {
