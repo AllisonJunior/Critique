@@ -457,10 +457,11 @@
                             </div>
                         </article>
 
-                        <article id="mesa-combat-card" class="mesa__combat-card" aria-label="Efeitos e comentários">
+                        <article id="mesa-combat-card" class="mesa__combat-card" aria-label="Efeitos, comentários e Sin's">
                             <div class="mesa__combat-tabs" role="tablist" aria-label="Painel de combate">
                                 <button id="mesa-combat-effects-tab" class="mesa__combat-tab mesa__combat-tab--active" type="button" role="tab" aria-selected="true" aria-controls="mesa-combat-effects-panel" data-mesa-combat-tab="effects">Efeitos</button>
                                 <button id="mesa-combat-descriptions-tab" class="mesa__combat-tab" type="button" role="tab" aria-selected="false" aria-controls="mesa-combat-descriptions-panel" data-mesa-combat-tab="descriptions">Comentários</button>
+                                <button id="mesa-combat-sins-tab" class="mesa__combat-tab" type="button" role="tab" aria-selected="false" aria-controls="mesa-combat-sins-panel" data-mesa-combat-tab="sins">Sin's</button>
                             </div>
 
                             <div id="mesa-combat-effects-panel" class="mesa__combat-panel" role="tabpanel" aria-labelledby="mesa-combat-effects-tab">
@@ -484,6 +485,48 @@
                             <div id="mesa-combat-descriptions-panel" class="mesa__combat-panel" role="tabpanel" aria-labelledby="mesa-combat-descriptions-tab" hidden>
                                 <div class="mesa__field mesa__damage-section mesa__damage-section--descriptions">
                                     <textarea id="mesa-comments" rows="4" placeholder="Ex.: O personagem vai focar em fazer..."></textarea>
+                                </div>
+                            </div>
+
+                            <div id="mesa-combat-sins-panel" class="mesa__combat-panel" role="tabpanel" aria-labelledby="mesa-combat-sins-tab" hidden>
+                                <div class="mesa__field mesa__damage-section mesa__sins-section">
+                                    <div class="mesa__sins-grid" aria-label="Valores de Sin's">
+                                        <label class="mesa__sin-card" for="mesa-sin-pride">
+                                            <img src="res/sins/pride.png" alt="" class="mesa__sin-icon" aria-hidden="true">
+                                            <span class="mesa__sin-label">Pride</span>
+                                            <input id="mesa-sin-pride" class="mesa__sin-input" type="number" min="0" step="1" value="0" inputmode="numeric" aria-label="Valor de Pride">
+                                        </label>
+                                        <label class="mesa__sin-card" for="mesa-sin-envy">
+                                            <img src="res/sins/envy.png" alt="" class="mesa__sin-icon" aria-hidden="true">
+                                            <span class="mesa__sin-label">Envy</span>
+                                            <input id="mesa-sin-envy" class="mesa__sin-input" type="number" min="0" step="1" value="0" inputmode="numeric" aria-label="Valor de Envy">
+                                        </label>
+                                        <label class="mesa__sin-card" for="mesa-sin-wrath">
+                                            <img src="res/sins/wrath.png" alt="" class="mesa__sin-icon" aria-hidden="true">
+                                            <span class="mesa__sin-label">Wrath</span>
+                                            <input id="mesa-sin-wrath" class="mesa__sin-input" type="number" min="0" step="1" value="0" inputmode="numeric" aria-label="Valor de Wrath">
+                                        </label>
+                                        <label class="mesa__sin-card" for="mesa-sin-sloth">
+                                            <img src="res/sins/sloth.png" alt="" class="mesa__sin-icon" aria-hidden="true">
+                                            <span class="mesa__sin-label">Sloth</span>
+                                            <input id="mesa-sin-sloth" class="mesa__sin-input" type="number" min="0" step="1" value="0" inputmode="numeric" aria-label="Valor de Sloth">
+                                        </label>
+                                        <label class="mesa__sin-card" for="mesa-sin-gluttony">
+                                            <img src="res/sins/gluttony.png" alt="" class="mesa__sin-icon" aria-hidden="true">
+                                            <span class="mesa__sin-label">Gluttony</span>
+                                            <input id="mesa-sin-gluttony" class="mesa__sin-input" type="number" min="0" step="1" value="0" inputmode="numeric" aria-label="Valor de Gluttony">
+                                        </label>
+                                        <label class="mesa__sin-card" for="mesa-sin-lust">
+                                            <img src="res/sins/lust.png" alt="" class="mesa__sin-icon" aria-hidden="true">
+                                            <span class="mesa__sin-label">Lust</span>
+                                            <input id="mesa-sin-lust" class="mesa__sin-input" type="number" min="0" step="1" value="0" inputmode="numeric" aria-label="Valor de Lust">
+                                        </label>
+                                        <label class="mesa__sin-card" for="mesa-sin-gloom">
+                                            <img src="res/sins/gloom.png" alt="" class="mesa__sin-icon" aria-hidden="true">
+                                            <span class="mesa__sin-label">Gloom</span>
+                                            <input id="mesa-sin-gloom" class="mesa__sin-input" type="number" min="0" step="1" value="0" inputmode="numeric" aria-label="Valor de Gloom">
+                                        </label>
+                                    </div>
                                 </div>
                             </div>
                         </article>
@@ -563,12 +606,6 @@
                                                 <option value="increase">Aumentar Dano</option>
                                                 <option value="reducao">Redução</option>
                                             </select>
-                                        </div>
-                                        <div class="creator__actions creator__actions--keyword-form">
-                                            <label class="effects__preserve-count">
-                                                <input id="effects-preserve-count" type="checkbox">
-                                                <span>Preservar Count (não reduzir contagem em combate)</span>
-                                            </label>
                                         </div>
                                     </div>
                                 </div>

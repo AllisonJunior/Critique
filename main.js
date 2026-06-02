@@ -32,7 +32,6 @@ const effectsPropertiesModeInputs = Array.from(document.querySelectorAll('input[
 const effectsBehaviorInputs = Array.from(document.querySelectorAll('input[name="effects-behavior"]'));
 const effectsModifierHowField = document.getElementById('effects-modifier-how-field');
 const effectsModifierHowSelect = document.getElementById('effects-modifier-how');
-const effectsPreserveCountCheckbox = document.getElementById('effects-preserve-count');
 const effectsModifierPropertiesField = document.getElementById('effects-modifier-properties-field');
 const effectsModifierPropertiesSelect = document.getElementById('effects-modifier-properties');
 const effectsStandardFields = document.getElementById('effects-standard-fields');
@@ -102,8 +101,10 @@ const mesaEffectAddButton = document.getElementById('mesa-effect-add-button');
 const mesaEffectsList = document.getElementById('mesa-effects-list');
 const mesaCombatEffectsTab = document.getElementById('mesa-combat-effects-tab');
 const mesaCombatDescriptionsTab = document.getElementById('mesa-combat-descriptions-tab');
+const mesaCombatSinsTab = document.getElementById('mesa-combat-sins-tab');
 const mesaCombatEffectsPanel = document.getElementById('mesa-combat-effects-panel');
 const mesaCombatDescriptionsPanel = document.getElementById('mesa-combat-descriptions-panel');
+const mesaCombatSinsPanel = document.getElementById('mesa-combat-sins-panel');
 const mesaCommentsInput = document.getElementById('mesa-comments');
 const captionModal = document.getElementById('caption-modal');
 const captionTitle = document.getElementById('caption-title');
@@ -142,6 +143,21 @@ const editImageInput = document.getElementById('edit-char-image');
 const editImagePreview = document.getElementById('edit-image-preview');
 const editImagePlaceholder = document.getElementById('edit-image-placeholder');
 const editSaveButton = document.getElementById('edit-save-character');
+
+const MESA_COMBAT_TABS = new Set(['effects', 'descriptions', 'sins']);
+const MESA_SIN_FIELDS = [
+	{ key: 'pride', label: 'Pride', icon: 'res/sins/pride.png' },
+	{ key: 'envy', label: 'Envy', icon: 'res/sins/envy.png' },
+	{ key: 'wrath', label: 'Wrath', icon: 'res/sins/wrath.png' },
+	{ key: 'sloth', label: 'Sloth', icon: 'res/sins/sloth.png' },
+	{ key: 'gluttony', label: 'Gluttony', icon: 'res/sins/gluttony.png' },
+	{ key: 'lust', label: 'Lust', icon: 'res/sins/lust.png' },
+	{ key: 'gloom', label: 'Gloom', icon: 'res/sins/gloom.png' }
+];
+
+const mesaSinInputs = Object.fromEntries(
+	MESA_SIN_FIELDS.map((sinField) => [sinField.key, document.getElementById(`mesa-sin-${sinField.key}`)])
+);
 
 const LOCAL_STORAGE_KEY = 'critique.characters';
 const KEYWORDS_STORAGE_KEY = 'critique.keywords';
@@ -194,6 +210,9 @@ const mesaEffectAdjustmentInputs = {};
 let draggedMesaEffectInstanceId = '';
 let dragOverMesaEffectInstanceId = '';
 let dragOverMesaEffectInsertAfter = false;
+let draggedEffectRegistryId = '';
+let dragOverEffectRegistryId = '';
+let dragOverEffectRegistryInsertAfter = false;
 let captionResolver = null;
 let imagePreviewScale = 1;
 let imagePreviewOffsetX = 0;
@@ -1215,6 +1234,70 @@ function writeStoredEffects(nextEffects) {
 	localStorage.setItem(EFFECTS_STORAGE_KEY, JSON.stringify(nextEffects));
 }
 
+function reorderEffectsRegistry(draggedEffectId, targetEffectId = '', insertAfter = false) {
+	const normalizedDraggedId = String(draggedEffectId ?? '').trim();
+	const normalizedTargetId = String(targetEffectId ?? '').trim();
+	if (!normalizedDraggedId) {
+		return;
+	}
+
+	const sourceIndex = effectsRegistry.findIndex((effect) => effect.id === normalizedDraggedId);
+	if (sourceIndex < 0) {
+		return;
+	}
+
+	const nextEffects = [...effectsRegistry];
+	const [movedEffect] = nextEffects.splice(sourceIndex, 1);
+	if (!movedEffect) {
+		return;
+	}
+
+	if (!normalizedTargetId) {
+		nextEffects.push(movedEffect);
+	} else {
+		const targetIndex = nextEffects.findIndex((effect) => effect.id === normalizedTargetId);
+		if (targetIndex < 0) {
+			nextEffects.push(movedEffect);
+		} else {
+			const insertIndex = targetIndex + (insertAfter ? 1 : 0);
+			nextEffects.splice(insertIndex, 0, movedEffect);
+		}
+	}
+
+	const hasOrderChanged = nextEffects.some((effect, index) => effect.id !== effectsRegistry[index]?.id);
+	if (!hasOrderChanged) {
+		return;
+	}
+
+	effectsRegistry = nextEffects;
+	writeStoredEffects(effectsRegistry);
+	renderEffectsRegistry();
+	renderMesaEffectOptions();
+}
+
+function clearEffectRegistryDropIndicators() {
+	if (!effectsRegistryList) {
+		return;
+	}
+
+	effectsRegistryList.querySelectorAll('.effects__item--drop-before, .effects__item--drop-after').forEach((card) => {
+		card.classList.remove('effects__item--drop-before', 'effects__item--drop-after');
+	});
+}
+
+function clearEffectRegistryDragState() {
+	if (effectsRegistryList) {
+		effectsRegistryList.querySelectorAll('.effects__item--dragging').forEach((card) => {
+			card.classList.remove('effects__item--dragging');
+		});
+	}
+
+	clearEffectRegistryDropIndicators();
+	draggedEffectRegistryId = '';
+	dragOverEffectRegistryId = '';
+	dragOverEffectRegistryInsertAfter = false;
+}
+
 function createExportPayload() {
 	return {
 		version: 1,
@@ -1352,10 +1435,6 @@ function resetEffectsForm() {
 	}
 	if (effectsModifierHowSelect) {
 		effectsModifierHowSelect.value = 'reduce';
-	}
-
-	if (effectsPreserveCountCheckbox) {
-		effectsPreserveCountCheckbox.checked = false;
 	}
 
 	// initialize fields
@@ -1652,9 +1731,6 @@ function beginEditEffect(effectId) {
 	if (effectsDescriptionValueInput) {
 		effectsDescriptionValueInput.checked = Boolean(existingEffect.valueEnabled);
 	}
-	if (effectsPreserveCountCheckbox) {
-		effectsPreserveCountCheckbox.checked = Boolean(existingEffect.preserveCount);
-	}
 	if (effectsImageInput) {
 		effectsImageInput.value = '';
 	}
@@ -1720,11 +1796,15 @@ function renderEffectsRegistry() {
 	effectsRegistry.forEach((effect) => {
 		const item = document.createElement('article');
 		item.className = 'effects__item';
+		item.dataset.effectId = effect.id;
 
 		const image = document.createElement('img');
 		image.className = 'effects__item-image';
 		image.src = effect.icon;
 		image.alt = effect.name;
+		image.draggable = true;
+		image.dataset.effectId = effect.id;
+		image.title = 'Arraste para reordenar';
 
 		const info = document.createElement('div');
 		info.className = 'effects__item-info';
@@ -1732,6 +1812,9 @@ function renderEffectsRegistry() {
 		const title = document.createElement('p');
 		title.className = 'effects__item-name';
 		title.textContent = effect.name;
+		title.draggable = true;
+		title.dataset.effectId = effect.id;
+		title.title = 'Arraste para reordenar';
 
 		const description = document.createElement('p');
 		description.className = 'effects__item-target';
@@ -1873,16 +1956,14 @@ async function addEffect() {
 		valueEnabled: properties === 'description' ? valueEnabled : false,
 		activation,
 		modifierDefinition,
-		preserveCount: Boolean(effectsPreserveCountCheckbox?.checked),
 	};
 
 	if (isEditing) {
 		effectsRegistry = effectsRegistry.map((effect) => (effect.id === editingEffectId ? nextEffect : effect));
 	} else {
-		effectsRegistry = [...effectsRegistry, nextEffect];
+		effectsRegistry = [nextEffect, ...effectsRegistry];
 	}
 
-	effectsRegistry = effectsRegistry.sort((left, right) => left.name.localeCompare(right.name, 'pt-BR', { sensitivity: 'base' }));
 	writeStoredEffects(effectsRegistry);
 	renderEffectsRegistry();
 	renderMesaEffectOptions();
@@ -2176,80 +2257,85 @@ function getCharacterMaxLife(character) {
 	return parseNonNegativeInt(character.vida);
 }
 
+function getDefaultMesaSinValues() {
+	return Object.fromEntries(MESA_SIN_FIELDS.map(({ key }) => [key, 0]));
+}
+
+function normalizeMesaSinValues(rawValues) {
+	const nextValues = getDefaultMesaSinValues();
+	if (!rawValues || typeof rawValues !== 'object' || Array.isArray(rawValues)) {
+		return nextValues;
+	}
+
+	for (const { key } of MESA_SIN_FIELDS) {
+		nextValues[key] = parseNonNegativeInt(rawValues[key]);
+	}
+
+	return nextValues;
+}
+
+function createDefaultMesaStateEntry(character) {
+	return {
+		life: getCharacterMaxLife(character),
+		stagger: getCharacterMaxStagger(character),
+		shield: 0,
+		effects: [],
+		speedValue: getDefaultMesaSpeedFieldValue(character),
+		caValue: getDefaultMesaCaFieldValue(character),
+		movementValue: getDefaultMesaMovementFieldValue(character),
+		comments: '',
+		combatTab: 'effects',
+		staggerDamageActive: false,
+		sins: getDefaultMesaSinValues()
+	};
+}
+
 function getCharacterMaxStagger(character) {
 	return parseNonNegativeInt(character.stagger);
 }
 
 function getMesaStateEntry(character, mesaState) {
-	const maxLife = getCharacterMaxLife(character);
-	const maxStagger = getCharacterMaxStagger(character);
 	const key = getCharacterKey(character.nome);
+	const defaultEntry = createDefaultMesaStateEntry(character);
 
 	if (!(key in mesaState)) {
-		return {
-			life: maxLife,
-			stagger: maxStagger,
-			shield: 0,
-			effects: [],
-			speedValue: getDefaultMesaSpeedFieldValue(character),
-			caValue: getDefaultMesaCaFieldValue(character),
-			movementValue: getDefaultMesaMovementFieldValue(character),
-			comments: '',
-			combatTab: 'effects',
-			staggerDamageActive: false
-		};
+		return defaultEntry;
 	}
 
 	const rawEntry = mesaState[key];
 	if (typeof rawEntry === 'number' || typeof rawEntry === 'string') {
 		return {
-			life: Math.min(parseNonNegativeInt(rawEntry), maxLife),
-			stagger: maxStagger,
-			shield: 0,
-			effects: [],
-			speedValue: getDefaultMesaSpeedFieldValue(character),
-			caValue: getDefaultMesaCaFieldValue(character),
-			movementValue: getDefaultMesaMovementFieldValue(character),
-			comments: '',
-			combatTab: 'effects',
-			staggerDamageActive: false
+			...defaultEntry,
+			life: Math.min(parseNonNegativeInt(rawEntry), defaultEntry.life)
 		};
 	}
 
 	if (!rawEntry || typeof rawEntry !== 'object' || Array.isArray(rawEntry)) {
-		return {
-			life: maxLife,
-			stagger: maxStagger,
-			shield: 0,
-			effects: [],
-			speedValue: getDefaultMesaSpeedFieldValue(character),
-			caValue: getDefaultMesaCaFieldValue(character),
-			movementValue: getDefaultMesaMovementFieldValue(character),
-			comments: '',
-			combatTab: 'effects',
-			staggerDamageActive: false
-		};
+		return defaultEntry;
 	}
 
 	const effects = Array.isArray(rawEntry.effects)
 		? rawEntry.effects.map((effect, index) => normalizeMesaEffect(effect, index)).filter(Boolean)
 		: [];
+	const sins = normalizeMesaSinValues(rawEntry.sins);
 
 	return {
-		life: Math.min(parseNonNegativeInt(rawEntry.life), maxLife),
-		stagger: Math.min(parseNonNegativeInt(rawEntry.stagger), maxStagger),
+		...defaultEntry,
+		life: Math.min(parseNonNegativeInt(rawEntry.life), defaultEntry.life),
+		stagger: Math.min(parseNonNegativeInt(rawEntry.stagger), defaultEntry.stagger),
 		shield: parseNonNegativeInt(rawEntry.shield),
 		effects,
 		speedValue: typeof rawEntry.speedValue === 'string' ? rawEntry.speedValue : getDefaultMesaSpeedFieldValue(character),
 		caValue: typeof rawEntry.caValue === 'string' ? rawEntry.caValue : getDefaultMesaCaFieldValue(character),
 		movementValue: typeof rawEntry.movementValue === 'string' ? rawEntry.movementValue : getDefaultMesaMovementFieldValue(character),
 		comments: String(rawEntry.comments ?? rawEntry.observacoes ?? rawEntry.comment ?? '').trim(),
-		combatTab: rawEntry.combatTab === 'descriptions' ? 'descriptions' : 'effects',
-		staggerDamageActive: Boolean(rawEntry.staggerDamageActive ?? rawEntry.staggerActive ?? false)
+		combatTab: MESA_COMBAT_TABS.has(String(rawEntry.combatTab ?? '').trim().toLowerCase()) ? String(rawEntry.combatTab).trim().toLowerCase() : 'effects',
+		staggerDamageActive: Boolean(rawEntry.staggerDamageActive ?? rawEntry.staggerActive ?? false),
+		sins
 	};
 }
 
-function setMesaStateEntry(character, mesaState, nextLife, nextStagger, nextEffects, nextSpeedValue, nextCaValue, nextMovementValue, nextStaggerDamageActive, nextComments, nextCombatTab, nextShieldValue) {
+function setMesaStateEntry(character, mesaState, nextLife, nextStagger, nextEffects, nextSpeedValue, nextCaValue, nextMovementValue, nextStaggerDamageActive, nextComments, nextCombatTab, nextShieldValue, nextSinsValues) {
 	const maxLife = getCharacterMaxLife(character);
 	const maxStagger = getCharacterMaxStagger(character);
 	const key = getCharacterKey(character.nome);
@@ -2277,7 +2363,10 @@ function setMesaStateEntry(character, mesaState, nextLife, nextStagger, nextEffe
 		: String(nextComments ?? '').trim();
 	const combatTab = nextCombatTab === undefined
 		? currentEntry.combatTab
-		: (nextCombatTab === 'descriptions' ? 'descriptions' : 'effects');
+		: (MESA_COMBAT_TABS.has(String(nextCombatTab ?? '').trim().toLowerCase()) ? String(nextCombatTab).trim().toLowerCase() : 'effects');
+	const sins = nextSinsValues === undefined
+		? currentEntry.sins
+		: normalizeMesaSinValues(nextSinsValues);
 	const defaultSpeedValue = getDefaultMesaSpeedFieldValue(character);
 	const defaultCaValue = getDefaultMesaCaFieldValue(character);
 	const defaultMovementValue = getDefaultMesaMovementFieldValue(character);
@@ -2293,6 +2382,7 @@ function setMesaStateEntry(character, mesaState, nextLife, nextStagger, nextEffe
 		&& !comments
 		&& combatTab === 'effects'
 		&& !staggerDamageActive
+		&& Object.values(sins).every((value) => value === 0)
 	) {
 		delete mesaState[key];
 		return;
@@ -2308,7 +2398,8 @@ function setMesaStateEntry(character, mesaState, nextLife, nextStagger, nextEffe
 		movementValue,
 		comments,
 		combatTab,
-		staggerDamageActive
+		staggerDamageActive,
+		sins
 	};
 }
 
@@ -2584,7 +2675,8 @@ function getMesaCurrentStagger(character, mesaState) {
 }
 
 function normalizeMesaCombatTab(value) {
-	return String(value ?? '').trim().toLowerCase() === 'descriptions' ? 'descriptions' : 'effects';
+	const normalizedTab = String(value ?? '').trim().toLowerCase();
+	return MESA_COMBAT_TABS.has(normalizedTab) ? normalizedTab : 'effects';
 }
 
 function updateMesaCombatTabUI(combatTab) {
@@ -2597,11 +2689,18 @@ function updateMesaCombatTabUI(combatTab) {
 		mesaCombatDescriptionsTab.classList.toggle('mesa__combat-tab--active', normalizedTab === 'descriptions');
 		mesaCombatDescriptionsTab.setAttribute('aria-selected', String(normalizedTab === 'descriptions'));
 	}
+	if (mesaCombatSinsTab) {
+		mesaCombatSinsTab.classList.toggle('mesa__combat-tab--active', normalizedTab === 'sins');
+		mesaCombatSinsTab.setAttribute('aria-selected', String(normalizedTab === 'sins'));
+	}
 	if (mesaCombatEffectsPanel) {
 		mesaCombatEffectsPanel.hidden = normalizedTab !== 'effects';
 	}
 	if (mesaCombatDescriptionsPanel) {
 		mesaCombatDescriptionsPanel.hidden = normalizedTab !== 'descriptions';
+	}
+	if (mesaCombatSinsPanel) {
+		mesaCombatSinsPanel.hidden = normalizedTab !== 'sins';
 	}
 }
 
@@ -2658,6 +2757,39 @@ function setMesaCombatTab(character, combatTab) {
 	);
 	writeMesaState(mesaState);
 	renderMesaStatus();
+}
+
+function persistMesaSinFields() {
+	const selectedCharacter = getSelectedMesaCharacter();
+	if (!selectedCharacter) {
+		return;
+	}
+
+	const mesaState = readMesaState();
+	const currentEntry = getMesaStateEntry(selectedCharacter, mesaState);
+	const nextSinsValues = Object.fromEntries(
+		MESA_SIN_FIELDS.map(({ key }) => [
+			key,
+			mesaSinInputs[key] instanceof HTMLInputElement ? mesaSinInputs[key].value : currentEntry.sins[key]
+		])
+	);
+
+	setMesaStateEntry(
+		selectedCharacter,
+		mesaState,
+		currentEntry.life,
+		currentEntry.stagger,
+		currentEntry.effects,
+		currentEntry.speedValue,
+		currentEntry.caValue,
+		currentEntry.movementValue,
+		currentEntry.staggerDamageActive,
+		currentEntry.comments,
+		currentEntry.combatTab,
+		undefined,
+		nextSinsValues
+	);
+	writeMesaState(mesaState);
 }
 
 function setMesaDamageTypeSelection(activeType) {
@@ -2740,13 +2872,13 @@ function renderMesaEffects(selectedCharacter, mesaState) {
 		if (isBehaviorModifier) {
 			effectCard.innerHTML = `
 				<div class="mesa__effect-card-header">
-					<img class="mesa__effect-icon" src="${effect.icon}" alt="" aria-hidden="true">
 					<div class="mesa__effect-card-title-group mesa__effect-drag-handle" draggable="true">
+						<img class="mesa__effect-icon" src="${effect.icon}" alt="" aria-hidden="true">
 						<h3 class="mesa__effect-card-title">${effect.name}</h3>
-						<p class="mesa__effect-card-detail">${effectDescription}</p>
 					</div>
 					<button class="mesa__effect-remove mesa__effect-remove--inline" type="button" data-mesa-effect-remove="${effect.instanceId}" aria-label="Remover ${effect.name}" title="Remover efeito">×</button>
 				</div>
+				<p class="mesa__effect-card-detail">${effectDescription}</p>
 				<div class="mesa__effect-controls mesa__effect-controls--modifier">
 					<label class="mesa__effect-field mesa__effect-potency-inline">
 						<span class="mesa__effect-field-label">Potência</span>
@@ -2763,13 +2895,13 @@ function renderMesaEffects(selectedCharacter, mesaState) {
 		} else if (isDescriptionEffect) {
 			effectCard.innerHTML = `
 				<div class="mesa__effect-card-header">
-					<img class="mesa__effect-icon" src="${effect.icon}" alt="" aria-hidden="true">
 					<div class="mesa__effect-card-title-group mesa__effect-drag-handle" draggable="true">
+						<img class="mesa__effect-icon" src="${effect.icon}" alt="" aria-hidden="true">
 						<h3 class="mesa__effect-card-title">${effect.name}</h3>
-						<p class="mesa__effect-card-detail">${effectDescription}</p>
 					</div>
 					<button class="mesa__effect-remove mesa__effect-remove--inline" type="button" data-mesa-effect-remove="${effect.instanceId}" aria-label="Remover ${effect.name}" title="Remover efeito">×</button>
 				</div>
+				<p class="mesa__effect-card-detail">${effectDescription}</p>
 				${effect.valueEnabled ? `
 				<label class="mesa__effect-field mesa__effect-description-value">
 					<span class="mesa__effect-field-label">Stack</span>
@@ -2780,13 +2912,13 @@ function renderMesaEffects(selectedCharacter, mesaState) {
 		} else {
 			effectCard.innerHTML = `
 				<div class="mesa__effect-card-header">
-					<img class="mesa__effect-icon" src="${effect.icon}" alt="" aria-hidden="true">
 					<div class="mesa__effect-card-title-group mesa__effect-drag-handle" draggable="true">
+						<img class="mesa__effect-icon" src="${effect.icon}" alt="" aria-hidden="true">
 						<h3 class="mesa__effect-card-title">${effect.name}</h3>
-						<p class="mesa__effect-card-detail">${effectDescription}</p>
 					</div>
 					<button class="mesa__effect-remove mesa__effect-remove--inline" type="button" data-mesa-effect-remove="${effect.instanceId}" aria-label="Remover ${effect.name}" title="Remover efeito">×</button>
 				</div>
+				<p class="mesa__effect-card-detail">${effectDescription}</p>
 				<div class="mesa__effect-controls${isPowerOnlyEffect ? ' mesa__effect-controls--power-only' : ' mesa__effect-controls--counted'}">
 					${isPowerOnlyEffect ? `
 					<div class="mesa__effect-power-inline-row">
@@ -3838,6 +3970,12 @@ function renderMesaStatus() {
 	const persistEditableMesaStatusFields = () => {
 		const nextMesaState = readMesaState();
 		const nextEntry = getMesaStateEntry(selectedCharacter, nextMesaState);
+		const nextSinsValues = Object.fromEntries(
+			MESA_SIN_FIELDS.map(({ key }) => [
+				key,
+				mesaSinInputs[key] instanceof HTMLInputElement ? mesaSinInputs[key].value : nextEntry.sins[key]
+			])
+		);
 		setMesaStateEntry(
 			selectedCharacter,
 			nextMesaState,
@@ -3849,7 +3987,9 @@ function renderMesaStatus() {
 			movementValueInput instanceof HTMLInputElement ? movementValueInput.value : nextEntry.movementValue,
 			nextEntry.staggerDamageActive,
 			nextEntry.comments,
-			nextEntry.combatTab
+			nextEntry.combatTab,
+			undefined,
+			nextSinsValues
 		);
 		writeMesaState(nextMesaState);
 	};
@@ -4016,6 +4156,12 @@ function renderMesaStatus() {
 	updateMesaDamagePreviewOverlay();
 	if (mesaCommentsInput instanceof HTMLTextAreaElement) {
 		mesaCommentsInput.value = currentEntry.comments || '';
+	}
+	for (const sinField of MESA_SIN_FIELDS) {
+		const sinInput = mesaSinInputs[sinField.key];
+		if (sinInput instanceof HTMLInputElement) {
+			sinInput.value = String(currentEntry.sins[sinField.key] ?? 0);
+		}
 	}
 	updateMesaCombatTabUI(currentEntry.combatTab);
 
@@ -4632,7 +4778,7 @@ mesaEffectsList?.addEventListener('dragstart', (event) => {
 		return;
 	}
 
-	const dragHandle = target.closest('.mesa__effect-card-header');
+	const dragHandle = target.closest('.mesa__effect-drag-handle');
 	if (!dragHandle || target.closest('.mesa__effect-remove')) {
 		return;
 	}
@@ -4734,6 +4880,24 @@ mesaCombatDescriptionsTab?.addEventListener('click', () => {
 
 	setMesaCombatTab(selectedCharacter, 'descriptions');
 });
+
+mesaCombatSinsTab?.addEventListener('click', () => {
+	const selectedCharacter = getSelectedMesaCharacter();
+	if (!selectedCharacter) {
+		return;
+	}
+
+	setMesaCombatTab(selectedCharacter, 'sins');
+});
+
+for (const sinField of MESA_SIN_FIELDS) {
+	const sinInput = mesaSinInputs[sinField.key];
+	if (sinInput instanceof HTMLInputElement) {
+		sinInput.addEventListener('input', () => {
+			persistMesaSinFields();
+		});
+	}
+}
 
 mesaCommentsInput?.addEventListener('input', () => {
 	const selectedCharacter = getSelectedMesaCharacter();
@@ -4976,6 +5140,92 @@ effectsRegistryList?.addEventListener('click', (event) => {
 	}
 
 	void deleteEffect(removeButton.dataset.effectId ?? '');
+});
+
+effectsRegistryList?.addEventListener('dragstart', (event) => {
+	const dragHandle = event
+		.composedPath()
+		.find((node) => node instanceof HTMLElement && node.matches('.effects__item-image, .effects__item-name'));
+	if (!(dragHandle instanceof HTMLElement)) {
+		return;
+	}
+
+	const effectItem = dragHandle.closest('.effects__item');
+	if (!(effectItem instanceof HTMLElement)) {
+		return;
+	}
+
+	draggedEffectRegistryId = effectItem.dataset.effectId ?? '';
+	if (!draggedEffectRegistryId) {
+		event.preventDefault();
+		return;
+	}
+
+	effectItem.classList.add('effects__item--dragging');
+	if (event.dataTransfer) {
+		event.dataTransfer.effectAllowed = 'move';
+		event.dataTransfer.setData('text/plain', draggedEffectRegistryId);
+	}
+});
+
+effectsRegistryList?.addEventListener('dragover', (event) => {
+	if (!draggedEffectRegistryId) {
+		return;
+	}
+
+	event.preventDefault();
+	const target = event.target;
+	if (!(target instanceof HTMLElement)) {
+		return;
+	}
+
+	const effectItem = target.closest('.effects__item');
+	clearEffectRegistryDropIndicators();
+	if (!(effectItem instanceof HTMLElement)) {
+		dragOverEffectRegistryId = '';
+		dragOverEffectRegistryInsertAfter = false;
+		return;
+	}
+
+	const targetEffectId = effectItem.dataset.effectId ?? '';
+	if (!targetEffectId || targetEffectId === draggedEffectRegistryId) {
+		dragOverEffectRegistryId = '';
+		dragOverEffectRegistryInsertAfter = false;
+		return;
+	}
+
+	const bounds = effectItem.getBoundingClientRect();
+	const insertAfter = event.clientY > bounds.top + bounds.height / 2;
+	effectItem.classList.add(insertAfter ? 'effects__item--drop-after' : 'effects__item--drop-before');
+	dragOverEffectRegistryId = targetEffectId;
+	dragOverEffectRegistryInsertAfter = insertAfter;
+});
+
+effectsRegistryList?.addEventListener('drop', (event) => {
+	if (!draggedEffectRegistryId) {
+		return;
+	}
+
+	event.preventDefault();
+	const target = event.target;
+	if (target instanceof HTMLElement) {
+		const effectItem = target.closest('.effects__item');
+		if (effectItem instanceof HTMLElement) {
+			const targetEffectId = effectItem.dataset.effectId ?? '';
+			if (targetEffectId && targetEffectId !== draggedEffectRegistryId) {
+				reorderEffectsRegistry(draggedEffectRegistryId, targetEffectId, dragOverEffectRegistryInsertAfter);
+			}
+			clearEffectRegistryDragState();
+			return;
+		}
+	}
+
+	reorderEffectsRegistry(draggedEffectRegistryId);
+	clearEffectRegistryDragState();
+});
+
+effectsRegistryList?.addEventListener('dragend', () => {
+	clearEffectRegistryDragState();
 });
 
 captionConfirmButton?.addEventListener('click', () => {
