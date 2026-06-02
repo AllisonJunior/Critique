@@ -98,6 +98,7 @@ const mesaLifeAttackButton = document.getElementById('mesa-life-attack-button');
 const mesaHealInput = document.getElementById('mesa-heal');
 const mesaHealButton = document.getElementById('mesa-heal-button');
 const mesaShieldButton = document.getElementById('mesa-shield-button');
+const mesaBonusShieldButton = document.getElementById('mesa-bonus-shield-button');
 const mesaHealLifeToggle = document.getElementById('mesa-heal-life-toggle');
 const mesaHealStaggerToggle = document.getElementById('mesa-heal-stagger-toggle');
 const mesaEffectSelect = document.getElementById('mesa-effect-select');
@@ -2630,6 +2631,7 @@ function createDefaultMesaStateEntry(character) {
 		life: getCharacterMaxLife(character),
 		stagger: getCharacterMaxStagger(character),
 		shield: 0,
+		bonusShield: 0,
 		effects: [],
 		speedValue: getDefaultMesaSpeedFieldValue(character),
 		caValue: getDefaultMesaCaFieldValue(character),
@@ -2676,6 +2678,7 @@ function getMesaStateEntry(character, mesaState) {
 		life: Math.min(parseNonNegativeInt(rawEntry.life), defaultEntry.life),
 		stagger: Math.min(parseNonNegativeInt(rawEntry.stagger), defaultEntry.stagger),
 		shield: parseNonNegativeInt(rawEntry.shield),
+		bonusShield: parseNonNegativeInt(rawEntry.bonusShield ?? rawEntry.yellowShield ?? rawEntry.extraShield),
 		effects,
 		speedValue: typeof rawEntry.speedValue === 'string' ? rawEntry.speedValue : getDefaultMesaSpeedFieldValue(character),
 		caValue: typeof rawEntry.caValue === 'string' ? rawEntry.caValue : getDefaultMesaCaFieldValue(character),
@@ -2688,7 +2691,7 @@ function getMesaStateEntry(character, mesaState) {
 	};
 }
 
-function setMesaStateEntry(character, mesaState, nextLife, nextStagger, nextEffects, nextSpeedValue, nextCaValue, nextMovementValue, nextStaggerDamageActive, nextComments, nextCombatTab, nextShieldValue, nextSinsValues, nextMpValue) {
+function setMesaStateEntry(character, mesaState, nextLife, nextStagger, nextEffects, nextSpeedValue, nextCaValue, nextMovementValue, nextStaggerDamageActive, nextComments, nextCombatTab, nextShieldValue, nextSinsValues, nextMpValue, nextBonusShieldValue) {
 	const maxLife = getCharacterMaxLife(character);
 	const maxStagger = getCharacterMaxStagger(character);
 	const key = getCharacterKey(character.nome);
@@ -2696,6 +2699,7 @@ function setMesaStateEntry(character, mesaState, nextLife, nextStagger, nextEffe
 	const clampedLife = Math.min(Math.max(parseNonNegativeInt(nextLife), 0), maxLife);
 	const clampedStagger = Math.min(Math.max(parseNonNegativeInt(nextStagger), 0), maxStagger);
 	const shieldValue = nextShieldValue === undefined ? currentEntry.shield : Math.max(parseNonNegativeInt(nextShieldValue), 0);
+	const bonusShieldValue = nextBonusShieldValue === undefined ? currentEntry.bonusShield : Math.max(parseNonNegativeInt(nextBonusShieldValue), 0);
 	const effects = Array.isArray(nextEffects)
 		? nextEffects.map((effect, index) => normalizeMesaEffect(effect, index)).filter(Boolean)
 		: currentEntry.effects;
@@ -2735,6 +2739,7 @@ function setMesaStateEntry(character, mesaState, nextLife, nextStagger, nextEffe
 		&& caValue === defaultCaValue
 		&& movementValue === defaultMovementValue
 		&& shieldValue === 0
+		&& bonusShieldValue === 0
 		&& !comments
 		&& !mpValue
 		&& combatTab === 'effects'
@@ -2749,6 +2754,7 @@ function setMesaStateEntry(character, mesaState, nextLife, nextStagger, nextEffe
 		life: clampedLife,
 		stagger: clampedStagger,
 		shield: shieldValue,
+		bonusShield: bonusShieldValue,
 		effects,
 		speedValue,
 		caValue,
@@ -4085,12 +4091,17 @@ function applyMesaDamage({ staggerOnly = false, lifeOnly = false } = {}) {
 	const mesaState = readMesaState();
 	const currentEntry = getMesaStateEntry(selectedCharacter, mesaState);
 	const currentShield = currentEntry.shield;
-	const blockStaggerDamage = currentShield > 0;
+	const currentBonusShield = currentEntry.bonusShield;
+	const blockStaggerDamage = currentShield > 0 || currentBonusShield > 0;
 	if (lifeOnly) {
-		const damageToLife = Math.max(damage - currentShield, 0);
-		const nextShield = Math.max(currentShield - damage, 0);
+		const bonusShieldConsumed = Math.min(currentBonusShield, damage);
+		const remainingAfterBonusShield = Math.max(damage - bonusShieldConsumed, 0);
+		const shieldConsumed = Math.min(currentShield, remainingAfterBonusShield);
+		const damageToLife = Math.max(remainingAfterBonusShield - shieldConsumed, 0);
+		const nextBonusShield = Math.max(currentBonusShield - bonusShieldConsumed, 0);
+		const nextShield = Math.max(currentShield - shieldConsumed, 0);
 		const nextLife = Math.max(currentEntry.life - damageToLife, 0);
-		setMesaStateEntry(selectedCharacter, mesaState, nextLife, currentEntry.stagger, currentEntry.effects, undefined, undefined, undefined, undefined, undefined, undefined, nextShield);
+		setMesaStateEntry(selectedCharacter, mesaState, nextLife, currentEntry.stagger, currentEntry.effects, undefined, undefined, undefined, undefined, undefined, undefined, nextShield, undefined, undefined, nextBonusShield);
 		writeMesaState(mesaState);
 		renderMesaStatus();
 		mesaDamageInput.value = '';
@@ -4128,13 +4139,19 @@ function applyMesaDamage({ staggerOnly = false, lifeOnly = false } = {}) {
 		: applyBehaviorDamageModifiers(appliedDamage, 'life', modifierAttackResolution.nextEffects);
 	const nextLife = staggerOnly
 		? currentLife
-		: Math.max(currentLife - Math.max(adjustedLifeDamage - currentShield, 0), 0);
+		: Math.max(currentLife - Math.max(adjustedLifeDamage - currentBonusShield - currentShield, 0), 0);
+	const bonusShieldConsumed = Math.min(currentBonusShield, adjustedLifeDamage);
+	const remainingAfterBonusShield = Math.max(adjustedLifeDamage - bonusShieldConsumed, 0);
+	const shieldConsumed = Math.min(currentShield, remainingAfterBonusShield);
+	const nextBonusShield = staggerOnly
+		? currentBonusShield
+		: Math.max(currentBonusShield - bonusShieldConsumed, 0);
 	const nextShield = staggerOnly
 		? currentShield
-		: Math.max(currentShield - adjustedLifeDamage, 0);
+		: Math.max(currentShield - shieldConsumed, 0);
 	const nextStagger = Math.max(currentStagger - adjustedStaggerDamage, 0);
 
-	setMesaStateEntry(selectedCharacter, mesaState, nextLife, nextStagger, modifierAttackResolution.nextEffects, undefined, undefined, undefined, undefined, undefined, undefined, nextShield);
+	setMesaStateEntry(selectedCharacter, mesaState, nextLife, nextStagger, modifierAttackResolution.nextEffects, undefined, undefined, undefined, undefined, undefined, undefined, nextShield, undefined, undefined, nextBonusShield);
 	writeMesaState(mesaState);
 	if (!activateMesaDamageTriggeredEffects()) {
 		renderMesaStatus();
@@ -4202,7 +4219,34 @@ function applyMesaShield() {
 	const shieldBonus = normalizeNonNegativeIntOrDefault(modifierHealResolution.bonus, 0);
 	const nextShield = currentEntry.shield + shieldAmount + shieldBonus;
 
-	setMesaStateEntry(selectedCharacter, mesaState, currentEntry.life, currentEntry.stagger, modifierHealResolution.nextEffects, undefined, undefined, undefined, undefined, undefined, undefined, nextShield);
+	setMesaStateEntry(selectedCharacter, mesaState, currentEntry.life, currentEntry.stagger, modifierHealResolution.nextEffects, undefined, undefined, undefined, undefined, undefined, undefined, nextShield, undefined, undefined, currentEntry.bonusShield);
+	writeMesaState(mesaState);
+	renderMesaStatus();
+	mesaHealInput.focus();
+}
+
+function applyMesaBonusShield() {
+	if (!mesaHealInput) {
+		return;
+	}
+
+	const selectedCharacter = getSelectedMesaCharacter();
+	if (!selectedCharacter || lastLoadedMesaCharacter !== selectedCharacter.nome) {
+		return;
+	}
+
+	const bonusShieldAmount = parseNonNegativeInt(mesaHealInput.value);
+	if (bonusShieldAmount <= 0) {
+		return;
+	}
+
+	const mesaState = readMesaState();
+	const currentEntry = getMesaStateEntry(selectedCharacter, mesaState);
+	const modifierHealResolution = resolveMesaModifierAction(currentEntry.effects, 'heal');
+	const shieldBonus = normalizeNonNegativeIntOrDefault(modifierHealResolution.bonus, 0);
+	const nextBonusShield = currentEntry.bonusShield + bonusShieldAmount + shieldBonus;
+
+	setMesaStateEntry(selectedCharacter, mesaState, currentEntry.life, currentEntry.stagger, modifierHealResolution.nextEffects, undefined, undefined, undefined, undefined, undefined, undefined, currentEntry.shield, undefined, undefined, nextBonusShield);
 	writeMesaState(mesaState);
 	renderMesaStatus();
 	mesaHealInput.focus();
@@ -4232,6 +4276,42 @@ function applyMesaShieldRemoval() {
 		currentEntry.staggerDamageActive,
 		currentEntry.comments,
 		currentEntry.combatTab,
+		0,
+		undefined,
+		undefined,
+		currentEntry.bonusShield
+	);
+	writeMesaState(mesaState);
+	renderMesaStatus();
+}
+
+function applyMesaBonusShieldRemoval() {
+	const selectedCharacter = getSelectedMesaCharacter();
+	if (!selectedCharacter || lastLoadedMesaCharacter !== selectedCharacter.nome) {
+		return;
+	}
+
+	const mesaState = readMesaState();
+	const currentEntry = getMesaStateEntry(selectedCharacter, mesaState);
+	if (currentEntry.bonusShield <= 0) {
+		return;
+	}
+
+	setMesaStateEntry(
+		selectedCharacter,
+		mesaState,
+		currentEntry.life,
+		currentEntry.stagger,
+		currentEntry.effects,
+		currentEntry.speedValue,
+		currentEntry.caValue,
+		currentEntry.movementValue,
+		currentEntry.staggerDamageActive,
+		currentEntry.comments,
+		currentEntry.combatTab,
+		currentEntry.shield,
+		undefined,
+		undefined,
 		0
 	);
 	writeMesaState(mesaState);
@@ -4248,7 +4328,7 @@ function applyMesaReset() {
 	const maxLife = getCharacterMaxLife(selectedCharacter);
 	const maxStagger = getCharacterMaxStagger(selectedCharacter);
 
-	setMesaStateEntry(selectedCharacter, mesaState, maxLife, maxStagger, undefined, undefined, undefined, undefined, undefined, undefined, undefined, 0);
+	setMesaStateEntry(selectedCharacter, mesaState, maxLife, maxStagger, undefined, undefined, undefined, undefined, undefined, undefined, undefined, 0, undefined, undefined, 0);
 	writeMesaState(mesaState);
 	renderMesaStatus();
 }
@@ -4297,6 +4377,7 @@ function renderMesaStatus() {
 	const maxLife = getCharacterMaxLife(selectedCharacter);
 	const currentLife = currentEntry.life;
 	const currentShield = currentEntry.shield;
+	const currentBonusShield = currentEntry.bonusShield;
 	const healthPercent = maxLife > 0 ? Math.round((currentLife / maxLife) * 100) : 0;
 	const staggerMax = getCharacterMaxStagger(selectedCharacter);
 	const currentStagger = currentEntry.stagger;
@@ -4329,7 +4410,10 @@ function renderMesaStatus() {
 				undefined,
 				undefined,
 				undefined,
-			currentEntry.shield
+			currentEntry.shield,
+			undefined,
+			undefined,
+			currentEntry.bonusShield
 		);
 		writeMesaState(mesaState);
 	}
@@ -4351,7 +4435,7 @@ function renderMesaStatus() {
 		mesaStatus.innerHTML = `
 			<div class="mesa__status-card">
 				<div class="mesa__status-header">
-					<h2 id="mesa-character-name" class="mesa__status-title mesa__status-title--button" role="button" tabindex="0" aria-label="Resetar Vida, Stagger e Shield do Personagem">${selectedCharacter.nome}</h2>
+					<h2 id="mesa-character-name" class="mesa__status-title mesa__status-title--button" role="button" tabindex="0" aria-label="Resetar Vida, Stagger e escudos do Personagem">${selectedCharacter.nome}</h2>
 					<div class="mesa__status-actions">
 						<button id="mesa-return-button" class="mesa__status-close-btn" type="button" aria-label="Voltar para a seleção de personagem" title="Voltar para a seleção de personagem">X</button>
 					</div>
@@ -4365,7 +4449,7 @@ function renderMesaStatus() {
 				</div>
 				<div class="mesa__status-metrics">
 				<div class="mesa__status-metric">
-					<p class="mesa__status-text"><span class="mesa__status-label"><img src="res/hp.png" alt="" class="mesa__status-icon" aria-hidden="true">Vida</span> <span class="mesa__status-value">${currentLife} / ${maxLife}${currentShield > 0 ? ` <span class="mesa__status-shield"><img src="res/shield.svg" alt="" class="mesa__status-icon" aria-hidden="true">${currentShield}<button id="mesa-shield-remove-button" class="mesa__status-shield-remove" type="button" aria-label="Remover shield" title="Remover shield">x</button></span>` : ''}</span></p>
+					<p class="mesa__status-text"><span class="mesa__status-label"><img src="res/hp.png" alt="" class="mesa__status-icon" aria-hidden="true">Vida</span> <span class="mesa__status-value">${currentLife} / ${maxLife}${currentBonusShield > 0 ? ` <span class="mesa__status-shield mesa__status-shield--bonus"><img src="res/shield.svg" alt="" class="mesa__status-icon" aria-hidden="true">${currentBonusShield}<button id="mesa-bonus-shield-remove-button" class="mesa__status-shield-remove" type="button" aria-label="Remover escudo adicional" title="Remover escudo adicional">x</button></span>` : ''}${currentShield > 0 ? ` <span class="mesa__status-shield"><img src="res/shield.svg" alt="" class="mesa__status-icon" aria-hidden="true">${currentShield}<button id="mesa-shield-remove-button" class="mesa__status-shield-remove" type="button" aria-label="Remover shield" title="Remover shield">x</button></span>` : ''}</span></p>
 					<div class="mesa__hp-bar" role="progressbar" aria-label="Vida" aria-valuemin="0" aria-valuemax="${maxLife}" aria-valuenow="${currentLife}">
 						<div class="mesa__hp-bar-fill mesa__hp-bar-fill--life" style="width: ${healthPercent}%;"></div>
 					</div>
@@ -4455,6 +4539,7 @@ function renderMesaStatus() {
 	const caResetIcon = document.getElementById('mesa-ca-reset-icon');
 	const movementResetIcon = document.getElementById('mesa-movement-reset-icon');
 	const shieldRemoveButton = document.getElementById('mesa-shield-remove-button');
+	const bonusShieldRemoveButton = document.getElementById('mesa-bonus-shield-remove-button');
 	const mesaCharacterName = document.getElementById('mesa-character-name');
 
 	const persistEditableMesaStatusFields = () => {
@@ -4576,6 +4661,12 @@ function renderMesaStatus() {
 	if (shieldRemoveButton instanceof HTMLElement) {
 		shieldRemoveButton.addEventListener('click', () => {
 			applyMesaShieldRemoval();
+		});
+	}
+
+	if (bonusShieldRemoveButton instanceof HTMLElement) {
+		bonusShieldRemoveButton.addEventListener('click', () => {
+			applyMesaBonusShieldRemoval();
 		});
 	}
 
@@ -5623,6 +5714,10 @@ mesaHealButton?.addEventListener('click', () => {
 
 mesaShieldButton?.addEventListener('click', () => {
 	applyMesaShield();
+});
+
+mesaBonusShieldButton?.addEventListener('click', () => {
+	applyMesaBonusShield();
 });
 
 mesaEffectAddButton?.addEventListener('click', () => {

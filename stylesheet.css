@@ -2414,6 +2414,12 @@ body:has(#inicio.panel--active)
     white-space: nowrap;
 }
 
+.mesa__status-shield--bonus
+{
+    background: rgba(246, 214, 103, 0.38);
+    color: #6a4f00;
+}
+
 .mesa__combat-mp-input
 {
     width: 68px;
@@ -2808,6 +2814,18 @@ body:has(#inicio.panel--active)
     background: linear-gradient(180deg, #d0e2f6 0%, #a9c8e7 100%);
 }
 
+.mesa__damage-attack--shield-bonus
+{
+    background: linear-gradient(180deg, #f7e7ad 0%, #efcf66 100%);
+    color: #6a4f00;
+}
+
+.mesa__damage-attack--shield-bonus:hover,
+.mesa__damage-attack--shield-bonus:focus-visible
+{
+    background: linear-gradient(180deg, #f8e099 0%, #e8c24c 100%);
+}
+
 .mesa__damage-section--type,
 .mesa__damage-section--heal
 {
@@ -2822,9 +2840,9 @@ body:has(#inicio.panel--active)
 
 .mesa__damage-section--heal .mesa__damage-main-row
 {
-    width: min(100%, 300px);
+    width: min(100%, 340px);
     justify-self: end;
-    grid-template-columns: minmax(0, 1fr) 44px 44px;
+    grid-template-columns: minmax(0, 1fr) 44px 44px 44px;
 }
 
 .mesa__damage-section--type .mesa__damage-main-row input,
