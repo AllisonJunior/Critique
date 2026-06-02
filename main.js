@@ -636,6 +636,16 @@ function resolveMesaCalculatedInputValue(value) {
 	return Math.max(0, Math.round(parsedValue));
 }
 
+function normalizeMesaEffectDescriptionValue(value) {
+	const rawValue = String(value ?? '').trim();
+	const resolvedValue = resolveMesaCalculatedInputValue(rawValue);
+	if (resolvedValue !== null) {
+		return String(resolvedValue);
+	}
+
+	return rawValue;
+}
+
 function normalizeNonNegativeIntOrDefault(value, defaultValue) {
 	return normalizeMesaCalculatedIntegerValue(value, defaultValue);
 }
@@ -750,7 +760,9 @@ function normalizeMesaEffect(effect, index = 0) {
 		how: normalizeEffectHow(effect.how ?? effect.como ?? template.how),
 		properties,
 		valueEnabled,
-		value: properties === 'description' ? String(effect.value ?? effect.valor ?? effect.text ?? '').trim() : '',
+		value: properties === 'description'
+			? normalizeMesaEffectDescriptionValue(effect.value ?? effect.valor ?? effect.text ?? '')
+			: '',
 		activation: behavior === 'modifier' ? 'modifier' : normalizeEffectActivation(effect.activation ?? template.activation),
 		modifierDefinition: normalizeEffectModifierDefinition(effect.modifierDefinition ?? template.modifierDefinition),
 		triggers,
@@ -3516,7 +3528,7 @@ function updateMesaEffectInstanceField(effectInstanceId, field, value) {
 		}
 
 		if (field === 'value') {
-			return { ...effect, value: String(value ?? '') };
+			return { ...effect, value: normalizeMesaEffectDescriptionValue(value) };
 		}
 
 		return effect;
@@ -3977,14 +3989,15 @@ function applyMesaEffect(effectInstanceId, source = 'manual', propagateEffectAct
 	const nextStagger = affectsStagger
 		? (isIncrease ? Math.min(currentEntry.stagger + power, maxStagger) : Math.max(currentEntry.stagger - power, 0))
 		: currentEntry.stagger;
+	const speedMinimumValue = speedRangeForEffect ? speedRangeForEffect.min : 1;
 	const nextSpeedValue = affectsSpeed
-		? String(isIncrease ? currentSpeedValue + power : Math.max(currentSpeedValue - power, 1))
+		? String(isIncrease ? currentSpeedValue + power : Math.max(currentSpeedValue - power, speedMinimumValue))
 		: currentEntry.speedValue;
 	const nextMovementValue = affectsMovement
 		? String(isIncrease ? currentMovementValue + power : Math.max(currentMovementValue - power, 0))
 		: currentEntry.movementValue;
 	const nextCaValue = affectsCa
-		? String(isIncrease ? currentCaValue + power : Math.max(currentCaValue - power, 1))
+		? String(isIncrease ? currentCaValue + power : Math.max(currentCaValue - power, 0))
 		: currentEntry.caValue;
 
 	const nextEffects = [...currentEntry.effects];
@@ -5298,6 +5311,24 @@ mesaEffectsList?.addEventListener('input', (event) => {
 	}
 });
 
+mesaEffectsList?.addEventListener('focusout', (event) => {
+	const target = event.target;
+	if (!(target instanceof HTMLInputElement)) {
+		return;
+	}
+
+	const valueEffectId = target.dataset.mesaEffectValue ?? '';
+	if (!valueEffectId) {
+		return;
+	}
+
+	if (commitMesaCalculatedInputValue(target) === null) {
+		return;
+	}
+
+	updateMesaEffectInstanceField(valueEffectId, 'value', target.value);
+});
+
 mesaEffectsList?.addEventListener('click', (event) => {
 	const target = event.target;
 	if (!(target instanceof HTMLElement)) {
@@ -5591,12 +5622,20 @@ mesaEffectsList?.addEventListener('keydown', (event) => {
 		|| target.dataset.mesaEffectAdjustmentField
 		|| target.dataset.mesaEffectIncreaseField
 		|| target.dataset.mesaEffectDecreaseField
+		|| target.dataset.mesaEffectValue
 	);
 	if (!isMesaEffectNumericField) {
 		return;
 	}
 
 	event.preventDefault();
+	if (target.dataset.mesaEffectValue) {
+		if (commitMesaCalculatedInputValue(target) !== null) {
+			updateMesaEffectInstanceField(target.dataset.mesaEffectValue, 'value', target.value);
+		}
+		return;
+	}
+
 	commitMesaCalculatedInputValue(target, { dispatchInput: true });
 });
 
