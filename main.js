@@ -106,9 +106,11 @@ const mesaEffectAddButton = document.getElementById('mesa-effect-add-button');
 const mesaEffectsList = document.getElementById('mesa-effects-list');
 const mesaCombatEffectsTab = document.getElementById('mesa-combat-effects-tab');
 const mesaCombatDescriptionsTab = document.getElementById('mesa-combat-descriptions-tab');
+const mesaCombatSkillsTab = document.getElementById('mesa-combat-skills-tab');
 const mesaCombatSinsTab = document.getElementById('mesa-combat-sins-tab');
 const mesaCombatEffectsPanel = document.getElementById('mesa-combat-effects-panel');
 const mesaCombatDescriptionsPanel = document.getElementById('mesa-combat-descriptions-panel');
+const mesaCombatSkillsPanel = document.getElementById('mesa-combat-skills-panel');
 const mesaCombatSinsPanel = document.getElementById('mesa-combat-sins-panel');
 const mesaCommentsInput = document.getElementById('mesa-comments');
 const mesaMpInput = document.getElementById('mesa-mp-value');
@@ -150,7 +152,7 @@ const editImagePreview = document.getElementById('edit-image-preview');
 const editImagePlaceholder = document.getElementById('edit-image-placeholder');
 const editSaveButton = document.getElementById('edit-save-character');
 
-const MESA_COMBAT_TABS = new Set(['effects', 'descriptions', 'sins']);
+const MESA_COMBAT_TABS = new Set(['effects', 'descriptions', 'skills', 'sins']);
 const MESA_SIN_FIELDS = [
 	{ key: 'pride', label: 'Pride', icon: 'res/sins/pride.png' },
 	{ key: 'envy', label: 'Envy', icon: 'res/sins/envy.png' },
@@ -3065,6 +3067,10 @@ function updateMesaCombatTabUI(combatTab) {
 		mesaCombatDescriptionsTab.classList.toggle('mesa__combat-tab--active', normalizedTab === 'descriptions');
 		mesaCombatDescriptionsTab.setAttribute('aria-selected', String(normalizedTab === 'descriptions'));
 	}
+	if (mesaCombatSkillsTab) {
+		mesaCombatSkillsTab.classList.toggle('mesa__combat-tab--active', normalizedTab === 'skills');
+		mesaCombatSkillsTab.setAttribute('aria-selected', String(normalizedTab === 'skills'));
+	}
 	if (mesaCombatSinsTab) {
 		mesaCombatSinsTab.classList.toggle('mesa__combat-tab--active', normalizedTab === 'sins');
 		mesaCombatSinsTab.setAttribute('aria-selected', String(normalizedTab === 'sins'));
@@ -3074,6 +3080,9 @@ function updateMesaCombatTabUI(combatTab) {
 	}
 	if (mesaCombatDescriptionsPanel) {
 		mesaCombatDescriptionsPanel.hidden = normalizedTab !== 'descriptions';
+	}
+	if (mesaCombatSkillsPanel) {
+		mesaCombatSkillsPanel.hidden = normalizedTab !== 'skills';
 	}
 	if (mesaCombatSinsPanel) {
 		mesaCombatSinsPanel.hidden = normalizedTab !== 'sins';
@@ -5508,6 +5517,15 @@ mesaCombatDescriptionsTab?.addEventListener('click', () => {
 	}
 
 	setMesaCombatTab(selectedCharacter, 'descriptions');
+});
+
+mesaCombatSkillsTab?.addEventListener('click', () => {
+	const selectedCharacter = getSelectedMesaCharacter();
+	if (!selectedCharacter) {
+		return;
+	}
+
+	setMesaCombatTab(selectedCharacter, 'skills');
 });
 
 mesaCombatSinsTab?.addEventListener('click', () => {

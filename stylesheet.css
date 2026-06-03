@@ -2532,6 +2532,22 @@ body:has(#inicio.panel--active)
     color: #101418;
 }
 
+.mesa__combat-placeholder
+{
+    min-height: 96px;
+    width: 100%;
+    box-sizing: border-box;
+    border-radius: 12px;
+    border: 1px solid rgba(16, 20, 24, 0.16);
+    background: #ffffff;
+    padding: 12px 14px;
+    display: flex;
+    align-items: center;
+    color: #40505f;
+    font-size: 14px;
+    font-weight: 600;
+}
+
 .mesa__vertical-separator
 {
     display: none;

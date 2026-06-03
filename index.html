@@ -460,12 +460,13 @@
                             </div>
                         </article>
 
-                        <article id="mesa-combat-card" class="mesa__combat-card" aria-label="Efeitos, comentários e Sin's">
+                        <article id="mesa-combat-card" class="mesa__combat-card" aria-label="Efeitos, comentários, Skills e Sin's">
                             <div class="mesa__combat-header">
                                 <div class="mesa__combat-tabs" role="tablist" aria-label="Painel de combate">
+                                    <button id="mesa-combat-skills-tab" class="mesa__combat-tab" type="button" role="tab" aria-selected="false" aria-controls="mesa-combat-skills-panel" data-mesa-combat-tab="skills">Skills</button>
                                     <button id="mesa-combat-effects-tab" class="mesa__combat-tab mesa__combat-tab--active" type="button" role="tab" aria-selected="true" aria-controls="mesa-combat-effects-panel" data-mesa-combat-tab="effects">Efeitos</button>
-                                    <button id="mesa-combat-descriptions-tab" class="mesa__combat-tab" type="button" role="tab" aria-selected="false" aria-controls="mesa-combat-descriptions-panel" data-mesa-combat-tab="descriptions">Comentários</button>
                                     <button id="mesa-combat-sins-tab" class="mesa__combat-tab" type="button" role="tab" aria-selected="false" aria-controls="mesa-combat-sins-panel" data-mesa-combat-tab="sins">Sin's</button>
+                                    <button id="mesa-combat-descriptions-tab" class="mesa__combat-tab" type="button" role="tab" aria-selected="false" aria-controls="mesa-combat-descriptions-panel" data-mesa-combat-tab="descriptions">Comentários</button>
                                 </div>
 
                                 <div class="mesa__combat-mp-field">
@@ -495,6 +496,12 @@
                             <div id="mesa-combat-descriptions-panel" class="mesa__combat-panel" role="tabpanel" aria-labelledby="mesa-combat-descriptions-tab" hidden>
                                 <div class="mesa__field mesa__damage-section mesa__damage-section--descriptions">
                                     <textarea id="mesa-comments" rows="4" placeholder="Ex.: O personagem vai focar em fazer..."></textarea>
+                                </div>
+                            </div>
+
+                            <div id="mesa-combat-skills-panel" class="mesa__combat-panel" role="tabpanel" aria-labelledby="mesa-combat-skills-tab" hidden>
+                                <div class="mesa__field mesa__damage-section mesa__damage-section--skills">
+                                    <div class="mesa__combat-placeholder">Skills em breve.</div>
                                 </div>
                             </div>
 
