@@ -2548,6 +2548,39 @@ body:has(#inicio.panel--active)
     font-weight: 600;
 }
 
+.mesa__skills-sections
+{
+    display: grid;
+    gap: 14px;
+}
+
+.mesa__skills-section
+{
+    display: grid;
+    gap: 10px;
+    padding: 14px;
+    border-radius: 14px;
+    border: 1px solid rgba(16, 20, 24, 0.12);
+    background: linear-gradient(180deg, rgba(248, 250, 252, 0.98) 0%, rgba(241, 245, 248, 0.98) 100%);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.78);
+}
+
+.mesa__skills-section-title
+{
+    margin: 0;
+    color: #101418;
+    font-size: 15px;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+}
+
+.mesa__skills-section-body
+{
+    display: grid;
+    gap: 10px;
+}
+
 .mesa__vertical-separator
 {
     display: none;

@@ -3731,6 +3731,28 @@ function applyBehaviorDamageModifiers(baseDamage, target, effects) {
 	return Math.max(Math.round(adjustedDamage), 0);
 }
 
+function applyShieldedLifeDamage(currentLife, currentShield, currentBonusShield, damageAmount) {
+	const normalizedDamage = Math.max(parseNonNegativeInt(damageAmount), 0);
+	if (normalizedDamage <= 0) {
+		return {
+			nextLife: currentLife,
+			nextShield: currentShield,
+			nextBonusShield: currentBonusShield
+		};
+	}
+
+	const bonusShieldConsumed = Math.min(currentBonusShield, normalizedDamage);
+	const remainingAfterBonusShield = Math.max(normalizedDamage - bonusShieldConsumed, 0);
+	const shieldConsumed = Math.min(currentShield, remainingAfterBonusShield);
+	const damageToLife = Math.max(remainingAfterBonusShield - shieldConsumed, 0);
+
+	return {
+		nextLife: Math.max(currentLife - damageToLife, 0),
+		nextShield: Math.max(currentShield - shieldConsumed, 0),
+		nextBonusShield: Math.max(currentBonusShield - bonusShieldConsumed, 0)
+	};
+}
+
 function getMesaModifierPowerBonus(mesaState, action) {
 	return getMesaModifierEffectsForAction(mesaState, action).reduce(
 		(sum, effect) => sum + normalizeNonNegativeIntOrDefault(effect.power, DEFAULT_MESA_EFFECT_POWER),
@@ -4062,12 +4084,24 @@ function applyMesaEffect(effectInstanceId, source = 'manual', propagateEffectAct
 
 	const totalFlatReduction = Math.max(0, attackFlatReduction + chainFlatReduction);
 	const totalBonus = Math.max(0, attackBonus + chainBonus);
+	const currentShield = currentEntry.shield;
+	const currentBonusShield = currentEntry.bonusShield;
+	let nextShield = currentShield;
+	let nextBonusShield = currentBonusShield;
 
 	let nextLifeWithEffectActivation = nextLife;
 	if (affectsLife && !isIncrease) {
-		// For damage effects, apply flat reduction (from attack modifiers and activation chain) before subtracting
-		const damageToApply = Math.max(power - totalFlatReduction, 0);
-		nextLifeWithEffectActivation = Math.max(currentEntry.life - damageToApply - totalBonus, 0);
+		// For damage effects, apply modifiers first, then consume shields before touching life.
+		const damageToApply = Math.max(power - totalFlatReduction, 0) + totalBonus;
+		const shieldedDamageResolution = applyShieldedLifeDamage(
+			currentEntry.life,
+			currentShield,
+			currentBonusShield,
+			damageToApply
+		);
+		nextLifeWithEffectActivation = shieldedDamageResolution.nextLife;
+		nextShield = shieldedDamageResolution.nextShield;
+		nextBonusShield = shieldedDamageResolution.nextBonusShield;
 	} else if (affectsLife) {
 		// healing or increase
 		nextLifeWithEffectActivation = Math.max(nextLife - totalBonus, 0);
@@ -4083,7 +4117,14 @@ function applyMesaEffect(effectInstanceId, source = 'manual', propagateEffectAct
 		modifierEffectActivationResolution.nextEffects,
 		nextSpeedValue,
 		nextCaValue,
-		nextMovementValue
+		nextMovementValue,
+		undefined,
+		undefined,
+		undefined,
+		nextShield,
+		undefined,
+		undefined,
+		nextBonusShield
 	);
 	writeMesaState(mesaState);
 	renderMesaStatus();
