@@ -3859,7 +3859,7 @@ function addMesaEffectToCharacter() {
 	if (!effectInstance) {
 		return;
 	}
-	const nextEffects = [...currentEntry.effects, effectInstance];
+	const nextEffects = [effectInstance, ...currentEntry.effects];
 
 	setMesaStateEntry(selectedCharacter, mesaState, currentEntry.life, currentEntry.stagger, nextEffects);
 	writeMesaState(mesaState);
